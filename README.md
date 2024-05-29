@@ -17,11 +17,11 @@ git clone https://github.com/dc-cl/RobustCL_real_world_client
 # (If needed)Install serial driver
 # First, go to any directory
 cd ~
-sudo bash ~/CL_ws/src/RobustCL_real_world_client/deployment/UWB/install_serial_driver.sh
+sudo bash ~/CL_ws/src/RobustCL_real_world_client/deployment/uwb/install_serial_driver.sh
 
 # Make ROS wrapper about UWB
 cd ~/CL_ws/src
-bash make_nlink_parser_ros.sh
+bash ./RobustCL_real_world_client/deployment/uwb/make_nlink_parser_ros.sh
 ```
 
 # Usage
