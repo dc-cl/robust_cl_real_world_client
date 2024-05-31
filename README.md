@@ -28,5 +28,5 @@ bash ./RobustCL_real_world_client/deployment/uwb/make_nlink_parser_ros.sh
 ```bash
 # Execute file: "run.sh" with id: 0, for example.
 cd ~/CL_ws
-bash ./src/RobustCL_real_world_client/deployment/UWB/run.sh 0
+bash ./src/RobustCL_real_world_client/deployment/uwb/run.sh 0
 ```
