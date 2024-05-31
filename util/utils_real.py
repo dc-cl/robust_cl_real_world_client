@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import sys
 sys.path.append('../')
-# from pathlib import Path
+from pathlib import Path
 
 import numpy as np
 from math import pi
@@ -9,22 +9,16 @@ import time
 import rospy
 import socket
 import threading
-import pyrealsense2 as rs
-import apriltag
 import cv2
 from std_msgs.msg import Float64MultiArray
 from visualization_msgs.msg import Marker
 from geometry_msgs.msg import Point
-
-
-# import matplotlib.pyplot as plt
-# import scienceplots
-
 import parameters as para
-
+import matplotlib.pyplot as plt
+import scienceplots
 from algorithms.DR import Robot, Robot_true
 from algorithms.BDA import Robot_BDA_EKF, Robot_BDA_EKF_KLD, \
-                            Robot_BDA_IEKF, Robot_BDA_IEKF_KLD
+                           Robot_BDA_IEKF, Robot_BDA_IEKF_KLD
 from algorithms.DMV import Robot_DMV, Robot_PECMV
 from algorithms.CU import Robot_BDA_EKF_CU, Robot_CI_CU, Robot_BDA_IEKF_CU
 from algorithms.CCL import Robots_CCL
@@ -38,63 +32,68 @@ from algorithms.DCL_GS import Robot_GS_early_paper, Robot_GS_EKF, \
                                 Robot_GS_LRHKF, Robot_GS_FDE_LRHKF, \
                                 Robot_GS_CKF, Robot_GS_FDE_CKF, Robot_GS_CLRHKF, Robot_GS_FDE_CLRHKF, \
                                 Robot_GS_LRH_GMKF, Robot_GS_FDE_LRH_GMKF, Robot_GS_CLRH_GMKF, Robot_GS_FDE_CLRH_GMKF\
+from nlink_parser.msg import LinktrackNodeframe2
 
-# id
+
+# 机器人id
 _id = 0
-
-# total simulation time from parameters TODO
 numbers = para.numbers
-# time interval from parameters TODO
 DELTA_T = para.DELTA_T
 
+# 总共运行时间 包含多次运动
 total_time = numbers * DELTA_T
-
-SIGMA_V_INPUT, SIGMA_OMEGA_INPUT = para.SIGMA_V_INPUT, para.SIGMA_OMEGA_INPUT
-sigma_v_input_, sigma_omega_input_ = SIGMA_V_INPUT[_id], SIGMA_OMEGA_INPUT[_id]
-E_V, E_OMEGA = para.E_V, para.E_OMEGA
-E_v_, E_omega_ = E_V[_id], E_OMEGA[_id]
 NUM_ROBOTS = para.NUM_ROBOTS
 types = para.types
 init_X = para.init_X
+init_v = para.init_v
+
+
+SIGMA_V_INPUT, SIGMA_OMEGA_INPUT = para.SIGMA_V_INPUT, para.SIGMA_OMEGA_INPUT
+sigma_v_input_, sigma_omega_input_ = SIGMA_V_INPUT, SIGMA_OMEGA_INPUT
+E_V, E_OMEGA = para.E_V, para.E_OMEGA
+E_v_, E_omega_ = E_V, E_OMEGA
 
 alg_count = len(types)
-if -1 in types: alg_count -= 1
+# -1表示包含DR
+if -1 in types:
+    alg_count -= 1
 
-s = None
-pipe, CamIn, CDistortCoe = None, None, None
 
-# Lock of 'v_all' and 'v_count
+# Lock of 'v_all' and 'v_count;Lock of 'state_alg', 'cov_alg' and *_count
 v_all_lock = threading.lock()
+state_lock = threading.lock()
 # int, index about where velocity updates
 v_count = -1
-# array, list all the velocities
+# 跟踪测量次数
+measure_count = 0
 v_all = np.zeros((numbers, 2))
 
-# Lock of 'state_alg', 'cov_alg' and *_count
-state_lock = threading.lock()
 # dict, list all the states updated by algorithms
 state_alg = {}
 cov_alg = {}
-# motion_count, meas_count, comm_count = 0, 0, 0
+
+# motion_count, meas_count, comm_count = 0, 0, 0,用于跟踪 motion、meas 和 comm 三种操作的进度
 state_count = [0, 0, -1]
-# int: After comm: index before 'back_need' should reupdate
+
+# int: After comm: index before 'back_need' should reupdate,用于标记在通信后需要重新更新的状态索引
 back_need = -1
 
+# 这意味着在使用条件变量时，必须先获得 state_lock 的锁，然后才能操作条件变量。
 state_cond = threading.Condition(lock=state_lock)
 
 
 # class of algorithms
 algs_motion, algs_meas, algs_comm = {}, {}, {}
 
-# broadcast the communication history and the init information
+# broadcast the communication history and the init information,定义一个字符串 str_broad,用于存储广播历史的 ROS 参数名
 str_broad = '/broadcast_comm_his_GS'
-# A lock about 'broadcast_comm_his_GS'
+# A lock about 'broadcast_comm_his_GS',定义一个字符串 str_broad_lock,用于存储广播历史锁的 ROS 参数名
 str_broad_lock = '/broadcast_lock'
 
-# Float: timestamp of start
+# 初始化 start_time 为 None,用于存储程序启动时间
 start_time = None
+rospy.init_node('client'+str(_id), anonymous=False)
 
-rospy.init_node('client'+str(_id), anonymous=False) # 
 
 def init():
     '''
@@ -105,41 +104,36 @@ def init():
     init_X: list
             All robots' initial states
     types: int
-            20 Resilient-no theta
+            20 Resilient-no theta NT
             24 Resilient-with theta and Chi2 detection with Youden index
+            -1 DR
+            0 Decentralized EKF(BDA)
+            2 Decentralized EKF with CU(DCL-CU)
+            6 Decentralized EKF(DMV)
+            12 CI-CU
+            28 multi-centralized + M-estimation
     falg: int
         which measuement model
-    
-    
     '''
+
     ###### Software init Start######
     global start_time, state_alg, cov_alg, algs_motion, alg_meas, algs_comm
 
     meas_bia_prob, comm_fail_prob = para.meas_bia_prob, para.comm_fail_prob
-    if not meas_bias_prob is None:
-        meas_bia_prob = meas_bias_prob
-
-    np.random.seed(_id)
     print(f"meas_bia_prob = {meas_bia_prob}, comm_fail_prob = {comm_fail_prob}")
 
-    
-    LANDMARK_NUM = para.LANDMARK_NUM
-    LANDMARK_POS = para.LANDMARK_POS
-
-    n2 = len(types) # the number of algorithms
-
-    
+    n2 = len(types)  # the number of algorithms
     # Initialize
     if n2: 
         for type in types:
             if type == 20:
-                algs_motion[20] = Robot_GS_early_paper(initial_s=init_X, _id=_id, NUM_ROBOTS=NUM_ROBOTS, flag=flag, LANDMARK_POS=LANDMARK_POS)
-                algs_meas[20] = Robot_GS_early_paper(initial_s=init_X, _id=_id, NUM_ROBOTS=NUM_ROBOTS, flag=flag, LANDMARK_POS=LANDMARK_POS)
-                algs_comm[20] = Robot_GS_early_paper(initial_s=init_X, _id=_id, NUM_ROBOTS=NUM_ROBOTS, flag=flag, LANDMARK_POS=LANDMARK_POS)
+                algs_motion[20] = Robot_GS_early_paper(initial_s=init_X, _id=_id, NUM_ROBOTS=NUM_ROBOTS)
+                algs_meas[20] = Robot_GS_early_paper(initial_s=init_X, _id=_id, NUM_ROBOTS=NUM_ROBOTS)
+                algs_comm[20] = Robot_GS_early_paper(initial_s=init_X, _id=_id, NUM_ROBOTS=NUM_ROBOTS)
             elif type == 28:    
-                algs_motion[28] = Robot_GS_LRHKF(initial_s=init_X, _id=_id, NUM_ROBOTS=NUM_ROBOTS, flag=flag, LANDMARK_POS=LANDMARK_POS)
-                algs_meas[28] = Robot_GS_LRHKF(initial_s=init_X, _id=_id, NUM_ROBOTS=NUM_ROBOTS, flag=flag, LANDMARK_POS=LANDMARK_POS)
-                algs_comm[28] = Robot_GS_LRHKF(initial_s=init_X, _id=_id, NUM_ROBOTS=NUM_ROBOTS, flag=flag, LANDMARK_POS=LANDMARK_POS)
+                algs_motion[28] = Robot_GS_LRHKF(initial_s=init_X, _id=_id, NUM_ROBOTS=NUM_ROBOTS)
+                algs_meas[28] = Robot_GS_LRHKF(initial_s=init_X, _id=_id, NUM_ROBOTS=NUM_ROBOTS)
+                algs_comm[28] = Robot_GS_LRHKF(initial_s=init_X, _id=_id, NUM_ROBOTS=NUM_ROBOTS)
             elif type == -1:
                 algs_motion[-1] = Robot(X=init_X[_id], _id=_id, NUM_ROBOTS=NUM_ROBOTS)
             
@@ -155,63 +149,67 @@ def init():
                 state_alg[type][0,:3] = np.array(init_X[_id])
     
     ######## hardware init starts ##########
-    # 1. RoboMaster
-    global s
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect(("192.168.42.2", int(40923)))
-    msg_robo = "command;"
-    s.send(msg_robo.encode('utf-8'))
-    buf_robo = s.recv(1024)
+    # 1. 初始化，接受三个话题的数据
+    class TopicSubscriber:
+        def __init__(self,topic_name):
+            # 初始化 ROS 节点
+            rospy.init_node('topic_subscriber', anonymous=True)
+            # 订阅话题
+            self.sub = rospy.Subscriber(topic_name, LinktrackNodeframe2, self.callback)
+            # 存储数据
+            self.data_list = []
+        def callback(self, msg_data,msg_nodes):
+            self.id = msg_data.id
+            self.data_list.append(msg_nodes)
+        def run(self):
+            rate = rospy.Rate(10)  # 10 Hz
+            while not rospy.is_shutdown():
+                rate.sleep()
+    data = []
+    dis =  np.zeros((20, 20, 20), dtype=int)
+    dis_count = -1
+    a = TopicSubscriber('LinktrackNodeframe2_0')
+    b = TopicSubscriber('LinktrackNodeframe2_1')
+    c = TopicSubscriber('LinktrackNodeframe2_2')
+    a.run()
+    b.run()
+    c.run()
+    for subscriber in (a,b,c):
+        if subscriber.id == 1:
+            data.append(subscriber)
+    for msg_nodes in data[0].data_list:
+        dis_count+=1
+        for msg in msg_nodes:
+            dis[dis_count][1][msg[0]] = msg[1]
 
-    # 2. D435i
-    global pipe, CamIn, CDistortCoe
-    Wid = 1920
-    Hei = 1080
-    pipe = rs.pipeline()
-    config = rs.config()
-    config.enable_stream(rs.stream.color, Wid, Hei, rs.format.bgr8, 30)
-    try:
-        cfg = pipe.start(config)
-    except Exception:
-        str_warn = "blaster fire;"
-        s.send(str_warn.encode('utf-8'))
-        buf_robo = s.recv(1024)
-        time.sleep(2)
-    
-    CProfile = cfg.get_stream(rs.stream.color)
-    CIntrin = CProfile.as_video_stream_profile().get_intrinsics()
-    CamIn = np.array([[CIntrin.fx, 0.0, CIntrin.ppx], [0.0, CIntrin.fy, CIntrin.ppy], [0.0, 0.0, 1.0]])
-    CDistortCoe = np.array(CIntrin.coeffs)
-
-    for _ in range(40):
-        pipe.wait_for_frames()
 
     ######## Already initialize! ########
-    # Register
-    
-    
-    # start time
+    # Register 通过这段代码，机器人能够在ROS系统中同步初始化完成的状态和启动时间，以便它们在后续的操作中能够同步进行
+    # start time,定义了一个 ROS 参数名称 /start_time，用于存储程序的启动时间。
     str_start_time = '/start_time'
-    # Bool: if 'broadcast_comm_his_GS' is created by this client, then True
+    # Bool: if 'broadcast_comm_his_GS' is created by this client, then True 用于表示是否创建了通信历史参数
     Create_broad = False
-    # Bool: if 'start_time' is created by this client, then True
+    # Bool: if 'start_time' is created by this client, then True 用于表示是否创建了启动时间参数
     Create_start_time = False
 
     if not rospy.has_param(str_broad):
         # 'broadcast_comm_his_GS' not be established in the Parameter Server
         broadcast_comm_his_GS = [0 for r2 in range(NUM_ROBOTS*NUM_ROBOTS)]
+        # 将当前客户端的通信次数标记为 1
         broadcast_comm_his_GS[(NUM_ROBOTS + 1)*_id] = 1
         rospy.set_param(str_broad, broadcast_comm_his_GS)
         Create_broad = True
 
     if not Create_broad:
         # 'broadcast_comm_his_GS' has been established, need to update
+        # 首先等待 str_broad_lock 参数不存在,然后将其设置为 True。这个锁是为了防止多个客户端同时更新 broadcast_comm_his_GS 参数
         while rospy.has_param(str_broad_lock):
             rospy.sleep(0.1)
         else: rospy.set_param(str_broad_lock, True)
         broadcast_comm_his_GS = rospy.get_param(str_broad)
+        # 将当前客户端的通信次数标记为 1,所以最初将state_count = [0, 0, -1]的通信设置为-1，就是为了在此加入一个初始化
         broadcast_comm_his_GS[(NUM_ROBOTS + 1)*_id] = 1
-        
+        # 遍历 broadcast_comm_his_GS 列表,检查是否所有机器人的通信次数都大于 0,表示所有机器人都已初始化完成
         for r in range(NUM_ROBOTS):
             if broadcast_comm_his_GS[(NUM_ROBOTS + 1)*r] <= 0: break
         else:
@@ -229,20 +227,20 @@ def init():
             rospy.sleep(0.1)
         
         start_time = rospy.get_param(str_start_time)
-
 # ---------------------------------
-    
+
+
 def motion():
     global v_all, v_count, next_motion_time
-
-    delay = 0
+    delay = 0.1
     while start_time is None:
         rospy.sleep(0.1)
 
     next_motion_time = start_time
     final_time = start_time + total_time
     velocity = [np.random.randn()*sigma_v_input_ + E_v_, np.random.randn()*sigma_omega_input_ + E_omega_]
-    
+    # np.random.randn()是NumPy库中用于生成服从标准正态分布（均值为0，标准差为1）的随机数的函数
+
     while next_motion_time < final_time:
         if time.time() + delay >= next_motion_time:
             msg_robo = f"chassis speed x {velocity[0]} y 0 z {-velocity[1]}"
@@ -250,16 +248,16 @@ def motion():
             buf_robo = s.recv(1024)
 
             with v_all_lock:
+                # v_count初始为-1
                 v_count += 1
                 v_all[v_count] = velocity
-                
 
             velocity = [np.random.randn()*sigma_v_input_ + E_v_, np.random.randn()*sigma_omega_input_ + E_omega_]
             next_motion_time += DELTA_T
-
 # -------------------
 
-# TODO 当观测,通讯完成后,可能有些滞后,需要重新update(666)
+
+# TODO 当观测,通讯完成后,可能有些滞后,需要重新update
 def time_propagation():
     global state_alg, cov_alg, state_count, algs_motion
     while not rospy.is_shutdown():
@@ -292,118 +290,29 @@ def time_propagation():
                         cov_alg[type][v_count_local + 1] = algs_motion[type].P.copy()
                 
                 state_count[0] += 1
-            
             # Notify that the motion model has been updated
             with state_cond:
                 state_cond.notify_all()
-                        
-# -----------------
 
-cam2robo_rot = np.array([[1,0,0],[0,0,1],[0,-1,0]],dtype="double")
-cam2robo_tra = np.array([[-154.5],[156.18],[87.5]])
 
-# PnP algorithm
-def PnPProcess(Points3D, Points0, CamIn, CDistortCoe):
-    retval, RVec, TVec = cv2.solvePnP(Points3D, Points0, CamIn, CDistortCoe,
-                                      flags=cv2.SOLVEPNP_ITERATIVE)  # useExtrinsicGuess = False,cv2.SOLVEPNP_EPNP
-    RotWCam, Jacobian = cv2.Rodrigues(RVec)
-    RotWCam = cam2robo_rot @ RotWCam
-    TVec = cam2robo_rot @ TVec + cam2robo_tra # +bias from camera
-
-    q0 = np.sqrt(np.trace(RotWCam)+1)/2.0
-    q3 = (RotWCam[1,0]-RotWCam[0,1])/4/q0
-    # RotCamW = RotWCam.T
-    # CamW = np.dot(-RotCamW, TVec) # Another relative pose
-    
-    #return (str(CamW[0, 0]).ljust(20), str(CamW[1, 0]).ljust(20), str(CamW[2, 0]).ljust(20),
-    #        str(RVec[0, 0]).ljust(20), str(RVec[1, 0]).ljust(20), str(RVec[2, 0]).ljust(20))
-    # return [(CamW[0]**2 + CamW[1]**2)**(1/2), m.atan2(CamW[1], CamW[0]), np.linalg.norm(RVec)]
-    # print(f"type0={type(CamW[1,0])}, type1={type(np.linalg.norm(RVec))}")
-
-    # return [CamW[1, 0], CamW[0, 0], np.linalg.norm(RVec)]
-    #print(TVec)
-    return [TVec[1, 0], -TVec[0, 0], 2*m.asin(q3)] # project to z-axis
-
-# Lock of 'mea_all' and 'mea_count'
 mea_lock = threading.lock()
-mea_rela_all = np.zeros((numbers, NUM_ROBOTS, 3))
-mea_count = 0
 
-robot_labels = para.Points3DAll.copy()
-Options = apriltag.DetectorOptions(quad_decimate=2.0)
-detections = apriltag.Detector(options=Options)
-
+# 实机实验标签间获得的距离代替
 def Measurement():
     global mea_all, mea_count
     next_motion_time = start_time + DELTA_T
     while not rospy.is_shutdown():
-        frame = pipe.wait_for_frames()
         measure_time = time.time()
         if measure_time >= next_motion_time:
             next_motion_time += DELTA_T
         else: continue
-        # XXX 图像的获取与处理可以分成2个线程?
-        Color = frame.get_color_frame()
-        Color_np = np.asanyarray(Color.get_data())
-        Gray_np = cv2.cvtColor(Color_np, cv2.COLOR_BGR2GRAY)
-        tags = detections.detect(Gray_np)
-        pnp_info = {}
-        pnp_count = np.zeros(NUM_ROBOTS)
-        see_landmark = False
-        master_numb = -1
-        if len(tags):
-            #count = 0
-            for tag in tags:
-                ID = tag.tag_id
-                #count = count + 1
-                #print(ID)
-                if ID >= 100:
-                    # TODO ()process of landmarks
-                    Point2DNp = np.array(tag.corners)
-                    Point3D = robot_labels[8]
-                    temp = PnPProcess(Point3D, Point2DNp, CamIn, CDistortCoe)
-                    see_landmark = True
-                elif ID <= MaxIndex:
-                    master_numb = ID//8
-                    Point2DNp = np.array(tag.corners)  ###########
-                    # print(Point2DNp)Point3D = robot_labels[int(ID), 0:4, 0:3]
-                    Point3D = robot_labels[int(ID%8)]
-
-                    temp = PnPProcess(Point3D, Point2DNp, CamIn, CDistortCoe)
-                    # n_temp = [(temp[0] ** 2 + temp[1] ** 2) ** (1 / 2), m.atan2(temp[1], temp[0]), temp[2]]
-                    # n_temp = [(CamW[0] ** 2 + CamW[1] ** 2) ** (1 / 2), m.atan2(CamW[1], CamW[0]), np.linalg.norm(RVec)]
-                if master_numb in pnp_info.keys():
-                    pnp_info[master_numb] = pnp_info[master_numb] + np.array(temp)
-                    pnp_count[master_numb] = pnp_count[master_numb] + 1
-                else:
-                    pnp_info[master_numb] = np.array(temp)
-                    pnp_count[master_numb] = 1
-            # pnp_result = pnp_result / count
-            for id in pnp_info.keys():
-                print(f"With id={id} {pnp_count[id]} detections")
-                pnp_info[id] = pnp_info[id] / pnp_count[id]
-                pnp_info[id][0:2] = pnp_info[id][0:2] / 1000 # mm -> m
-
-            with mea_lock:
-                mea_count += 1
-                for id in pnp_info.keys():
-                    mea_rela_all[mea_count, id, :] = pnp_info[id].copy()
-
 # --------------------
+
 
 def Mea_update():
     global state_count, state_alg, cov_alg, algs_meas
     Need_Update = False
     while not rospy.is_shutdown():
-        # while True:
-        #     with state_cond:
-        #         if state_count[1] < state_count[0]:
-        #             # motion has updated to the current, next the meas update
-        #             # Comm update just now
-        #             mea_count_local = state_count[1]
-        #             break
-        #         state_cond.wait()
-
         with state_cond:
             if state_count[1] >= state_count[0]:
                 # motion has updated to the current, next the meas update
@@ -411,16 +320,9 @@ def Mea_update():
                 state_cond.wait()
             else: mea_count_local = state_count[1]
 
-        # if Need_Update:
-        #     with state_lock:
-        #         state_count[1] += 1
-        # else:
-
         with mea_lock:
             if mea_count > mea_count_local:
                 Need_Update = True
-                # mea_count_local += 1
-                # mea_count_max_local = max(mea_count_max_local, mea_count_local)
                 for type in types:
                     if type == -1: continue
                     for r in range(NUM_ROBOTS):
@@ -434,11 +336,6 @@ def Mea_update():
     
         if Need_Update:
             # Appears when measure faster than motion
-            # while True:
-            #     with state_cond:
-            #         if mea_count_local <= state_count[0]:
-            #             break
-            #         state_cond.wait()
             with state_cond:
                 if mea_count_local > state_count[0]:
                     state_cond.wait()
@@ -462,14 +359,13 @@ def Mea_update():
                     # TODO ()other type of algorithms
             
             Need_Update = False
-
 # ------------
 
 comm_lock = threading.Lock()
 state_comm, cov_comm = None, None
 comm_count = 1
-
 COMM_RATE = para.COMM_RATE
+
 
 def Comm_send():
     global state_comm, cov_comm, comm_count, back_need
@@ -483,22 +379,24 @@ def Comm_send():
         curr_comm_times = time.time() - start_time
         if not comm_complete and \
             (curr_comm_times > comm_interval * comm_times and curr_comm_times < comm_interval * (comm_times + 1)) \
-            and curr_comm_times < numbers:
-            
+            and comm_times < numbers:
+
             while rospy.has_param(str_broad_lock):
                 rospy.sleep(1e-3)
             else: rospy.set_param(str_broad_lock, True)
             broadcast_comm_his_GS = rospy.get_param(str_broad)
+            # 说明这是第一次获取通信数据,需要进行一些初始化操作
             if state_comm is None:
-                broadcast_comm_his_GS[(NUM_ROBOTS+1)*_id] = comm_times
+                broadcast_comm_his_GS[(NUM_ROBOTS+1)*_id] = comm_times  # 更新当前机器人在广播历史中的通信次数
                 for r in range(NUM_ROBOTS):
+                    # 如果某个机器人的通信次数超过了 numbers,则减去 numbers。这可能是为了防止通信次数过大导致的数值溢出问题
                     if broadcast_comm_his_GS[NUM_ROBOTS*_id + r] > numbers:
                         broadcast_comm_his_GS[NUM_ROBOTS*_id + r] -= numbers
-                rospy.get_param(str_broad, broadcast_comm_his_GS)
-            rospy.delete_param(str_broad_lock)
-            
+                rospy.get_param(str_broad, broadcast_comm_his_GS)  # 将更新后的广播历史重新设置回ROS参数服务器
+            rospy.delete_param(str_broad_lock) # 删除掉 str_broad_lock 参数,释放对广播历史的独占访问权
+
             if state_comm is None:
-                # 1st: Obtain the belief for comm
+                # 1st: Obtain the belief for comm，这段代码是在处理 state_comm 为 None 的情况,即第一次获取通信数据
                 with state_cond:
                     # type[0]
                     if np.all(state_alg[types[0]][comm_times*COMM_RATE-1, :]) == 0:
@@ -513,12 +411,13 @@ def Comm_send():
             message = Float64MultiArray()
             message.data = [_id for ind in range(alg_count*NUM_ROBOTS*(NUM_ROBOTS+1)+3)]
             
-            
+            # 根据广播历史中各机器人的通信次数对机器人ID进行排序，得到 comm_1st_order 列表
             comm_1st_order = sorted(np.arange(NUM_ROBOTS), key = lambda i: broadcast_comm_his_GS[NUM_ROBOTS*_id + i])
-            
+            # 检查排序后的第一个机器人是否已经完成了本次通信。如果是，则设置 comm_complete = True
             if broadcast_comm_his_GS[NUM_ROBOTS*_id + comm_1st_order[0]] == comm_times:
                 comm_complete = True
             else:
+                # 设置消息的接收机器人ID为排序后的第一个机器人
                 message.data[0] = comm_1st_order[0]
                 # message[1] = _id
                 message.data[2] = comm_times
@@ -544,13 +443,15 @@ def Comm_send():
             comm_times += 1
             comm_complete = False
 
-# queue_recv = []
+
 def Comm_recv_callback(recv):
+    # 首先检查接收到的消息的接收者 ID 是否与当前机器人的 ID 匹配,如果不匹配则直接返回。
     if int(recv.data[0]) != _id: return
-    
+    # 初始化接收标志 succ_recv 为 False
     succ_recv = False
     state_recv, cov_recv = {}, {}
     with comm_lock:
+        # 检查接收到的消息的通信次数是否与当前机器人的通信次数匹配
         if int(recv.data[2]) == comm_count:
             succ_recv = True
             for type in types:
@@ -586,8 +487,6 @@ def Comm_recv_callback(recv):
             for type in types:
                 state_comm[type] = algs_comm[type].X_GS.copy()
                 cov_comm[type]=  algs_comm[type].P_GS.copy()
-
-
 
 
 def Comm_recv():
@@ -661,14 +560,9 @@ def Send2rviz():
         for typ in types:
             marker_publisher[typ].publish(markers[typ])
 
-
-
-
-# ------------------
     
 if __name__ == '__main__':
-    
-    init(type = [20, 28], flag = -1)
+    init()
 
     thread_motion = threading.Thread(target=motion)
     thread_motion.start()
