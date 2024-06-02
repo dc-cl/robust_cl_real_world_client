@@ -10,6 +10,7 @@ mkdir -p ~/CL_ws/src && cd ~/CL_ws/src
 ```bash
 cd ~/CL_ws/src/
 git clone https://github.com/dc-cl/RobustCL_real_world_client
+chmod -R +x ./RobustCL_real_world_client/scripts/
 ```
 
 2. Deploy the environment for UWB(NoopLoop)
