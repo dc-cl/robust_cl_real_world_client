@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.0.2)
+<<<<<<< HEAD
 project(robust_cl_real_world_client)
+=======
+project(RobustCL_real_world_client)
+>>>>>>> 915fc5a7e23ad5e67539e898690cfca93aece120
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -104,7 +108,11 @@ find_package(catkin REQUIRED COMPONENTS
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
+<<<<<<< HEAD
 #  LIBRARIES robust_cl_real_world_client
+=======
+#  LIBRARIES RobustCL_real_world_client
+>>>>>>> 915fc5a7e23ad5e67539e898690cfca93aece120
 #  CATKIN_DEPENDS roscpp rospy std_masgs
 #  DEPENDS system_lib
 )
@@ -122,7 +130,11 @@ include_directories(
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
+<<<<<<< HEAD
 #   src/${PROJECT_NAME}/robust_cl_real_world_client.cpp
+=======
+#   src/${PROJECT_NAME}/RobustCL_real_world_client.cpp
+>>>>>>> 915fc5a7e23ad5e67539e898690cfca93aece120
 # )
 
 ## Add cmake target dependencies of the library
@@ -133,7 +145,11 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
+<<<<<<< HEAD
 # add_executable(${PROJECT_NAME}_node src/robust_cl_real_world_client_node.cpp)
+=======
+# add_executable(${PROJECT_NAME}_node src/RobustCL_real_world_client_node.cpp)
+>>>>>>> 915fc5a7e23ad5e67539e898690cfca93aece120
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -197,7 +213,11 @@ include_directories(
 #############
 
 ## Add gtest based cpp test target and link libraries
+<<<<<<< HEAD
 # catkin_add_gtest(${PROJECT_NAME}-test test/test_robust_cl_real_world_client.cpp)
+=======
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_RobustCL_real_world_client.cpp)
+>>>>>>> 915fc5a7e23ad5e67539e898690cfca93aece120
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
