@@ -10,13 +10,18 @@ mkdir -p ~/CL_ws/src && cd ~/CL_ws/src
 ```bash
 cd ~/CL_ws/src/
 git clone https://github.com/dc-cl/robust_cl_real_world_client
+
+# Give execute authority
 chmod -R +x ./robust_cl_real_world_client/scripts/
+
+# Install necessary Python package
+pip install -r ./robust_cl_real_world_client/scripts/requirements.txt
 ```
 
 2. Deploy the environment for UWB(NoopLoop)
 ```bash
 # (If needed)Install serial driver
-# First, go to any directory
+# First, go to any directory, such as "~"
 cd ~
 sudo bash ~/CL_ws/src/robust_cl_real_world_client/deployment/uwb/install_serial_driver.sh
 

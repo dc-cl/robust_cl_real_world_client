@@ -1,14 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-<<<<<<< HEAD
   <name>robust_cl_real_world_client</name>
   <version>0.0.0</version>
   <description>The robust_cl_real_world_client package</description>
-=======
-  <name>RobustCL_real_world_client</name>
-  <version>0.0.0</version>
-  <description>The RobustCL_real_world_client package</description>
->>>>>>> 915fc5a7e23ad5e67539e898690cfca93aece120
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->
@@ -25,11 +19,7 @@
   <!-- Url tags are optional, but multiple are allowed, one per tag -->
   <!-- Optional attribute type can be: website, bugtracker, or repository -->
   <!-- Example: -->
-<<<<<<< HEAD
   <!-- <url type="website">http://wiki.ros.org/robust_cl_real_world_client</url> -->
-=======
-  <!-- <url type="website">http://wiki.ros.org/RobustCL_real_world_client</url> -->
->>>>>>> 915fc5a7e23ad5e67539e898690cfca93aece120
 
 
   <!-- Author tags are optional, multiple are allowed, one per tag -->

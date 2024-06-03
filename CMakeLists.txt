@@ -130,11 +130,7 @@ include_directories(
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
-<<<<<<< HEAD
 #   src/${PROJECT_NAME}/robust_cl_real_world_client.cpp
-=======
-#   src/${PROJECT_NAME}/RobustCL_real_world_client.cpp
->>>>>>> 915fc5a7e23ad5e67539e898690cfca93aece120
 # )
 
 ## Add cmake target dependencies of the library
@@ -145,11 +141,7 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-<<<<<<< HEAD
 # add_executable(${PROJECT_NAME}_node src/robust_cl_real_world_client_node.cpp)
-=======
-# add_executable(${PROJECT_NAME}_node src/RobustCL_real_world_client_node.cpp)
->>>>>>> 915fc5a7e23ad5e67539e898690cfca93aece120
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
