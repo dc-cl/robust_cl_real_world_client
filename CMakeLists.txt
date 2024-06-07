@@ -197,11 +197,7 @@ include_directories(
 #############
 
 ## Add gtest based cpp test target and link libraries
-<<<<<<< HEAD
 # catkin_add_gtest(${PROJECT_NAME}-test test/test_robust_cl_real_world_client.cpp)
-=======
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_RobustCL_real_world_client.cpp)
->>>>>>> 915fc5a7e23ad5e67539e898690cfca93aece120
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
