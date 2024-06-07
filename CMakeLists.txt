@@ -1,9 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-<<<<<<< HEAD
 project(robust_cl_real_world_client)
-=======
-project(RobustCL_real_world_client)
->>>>>>> 915fc5a7e23ad5e67539e898690cfca93aece120
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -14,7 +10,7 @@ project(RobustCL_real_world_client)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
-  std_masgs
+  std_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -108,11 +104,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-<<<<<<< HEAD
 #  LIBRARIES robust_cl_real_world_client
-=======
-#  LIBRARIES RobustCL_real_world_client
->>>>>>> 915fc5a7e23ad5e67539e898690cfca93aece120
 #  CATKIN_DEPENDS roscpp rospy std_masgs
 #  DEPENDS system_lib
 )
