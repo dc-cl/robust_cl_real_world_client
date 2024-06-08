@@ -15,7 +15,7 @@ git clone https://github.com/dc-cl/robust_cl_real_world_client
 chmod -R +x ./robust_cl_real_world_client/scripts/
 
 # (Option) If using virtual environment
-conda create -n CL python=3.7 # version of Python is not important. If there are conflicts while installing dependencies, just change the version
+conda create -n CL python=3.9 # version of Python is not important. If there are conflicts while installing dependencies, just change the version
 conda activate CL
 
 # Install necessary Python package
