@@ -6,4 +6,4 @@
 id=${1:0}
 
 source devel/setup.bash
-roslaunch linktrack_multiple_tags.launch id:=${id}
+roslaunch nlink_parser linktrack_multiple_tags.launch id:=${id}
