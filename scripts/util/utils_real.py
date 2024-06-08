@@ -18,22 +18,20 @@ from algorithms.DCL_GS import Robot_GS_early_paper, Robot_GS_LRHKF
 from nlink_parser.msg import LinktrackNodeframe2
 
 
-# 机器人id
-_id = 0
-numbers = para.numbers
-DELTA_T = para.DELTA_T
+_id = 0                         # id 
+NUM_ROBOTS = para.NUM_ROBOTS    # robo个数
+numbers = para.numbers          # robo运动次数
+DELTA_T = para.DELTA_T          # 每次运动时间
+total_time = numbers * DELTA_T  # 总共运行时间 包含多次运动
+types = para.types              # 算法种类
+init_X = para.init_X            # robo初始位置
+init_v = para.init_v            # robo初始理论输入速度
 
-# 总共运行时间 包含多次运动
-total_time = numbers * DELTA_T
-NUM_ROBOTS = para.NUM_ROBOTS
-types = para.types
-init_X = para.init_X
-init_v = para.init_v
-
-
+# 式（32）（33）
 SIGMA_V_INPUT, SIGMA_OMEGA_INPUT = para.SIGMA_V_INPUT, para.SIGMA_OMEGA_INPUT
-sigma_v_input_, sigma_omega_input_ = SIGMA_V_INPUT, SIGMA_OMEGA_INPUT
 E_V, E_OMEGA = para.E_V, para.E_OMEGA
+
+sigma_v_input_, sigma_omega_input_ = SIGMA_V_INPUT, SIGMA_OMEGA_INPUT
 E_v_, E_omega_ = E_V, E_OMEGA
 
 alg_count = len(types)
@@ -41,15 +39,15 @@ alg_count = len(types)
 if -1 in types:
     alg_count -= 1
 
-
 # Lock of 'v_all' and 'v_count;Lock of 'state_alg', 'cov_alg' and *_count
 v_all_lock = threading.lock()
 state_lock = threading.lock()
+
 # int, index about where velocity updates
 v_count = -1
-# 跟踪测量次数
-measure_count = 0
-v_all = np.zeros((numbers, 2))
+
+measure_count = 0                # 跟踪测量次数
+v_all = np.zeros((numbers, 2))   # 存储每个robo的速度数据
 
 # dict, list all the states updated by algorithms
 state_alg = {}
@@ -63,7 +61,6 @@ back_need = -1
 
 # 这意味着在使用条件变量时，必须先获得 state_lock 的锁，然后才能操作条件变量。
 state_cond = threading.Condition(lock=state_lock)
-
 
 # class of algorithms
 algs_motion, algs_meas, algs_comm = {}, {}, {}
@@ -109,11 +106,7 @@ def init():
     # Initialize
     if n2: 
         for type in types:
-            if type == 20:
-                algs_motion[20] = Robot_GS_early_paper(initial_s=init_X, _id=_id, NUM_ROBOTS=NUM_ROBOTS)
-                algs_meas[20] = Robot_GS_early_paper(initial_s=init_X, _id=_id, NUM_ROBOTS=NUM_ROBOTS)
-                algs_comm[20] = Robot_GS_early_paper(initial_s=init_X, _id=_id, NUM_ROBOTS=NUM_ROBOTS)
-            elif type == 28:    
+            if type == 28:
                 algs_motion[28] = Robot_GS_LRHKF(initial_s=init_X, _id=_id, NUM_ROBOTS=NUM_ROBOTS)
                 algs_meas[28] = Robot_GS_LRHKF(initial_s=init_X, _id=_id, NUM_ROBOTS=NUM_ROBOTS)
                 algs_comm[28] = Robot_GS_LRHKF(initial_s=init_X, _id=_id, NUM_ROBOTS=NUM_ROBOTS)
