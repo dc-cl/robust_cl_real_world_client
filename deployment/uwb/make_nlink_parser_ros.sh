@@ -9,3 +9,6 @@ cd ../
 # 编译
 echo "Making..."
 catkin_make
+
+# 打开串口权限
+sudo usermod -a -G dialout $USER
