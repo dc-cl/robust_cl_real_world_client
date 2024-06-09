@@ -273,7 +273,7 @@ def time_propagation():
 
 mea_lock = threading.lock()
 
-# 实机实验标签间获得的距离代替
+# 实机实验 用标签间获得的距离代替
 def Measurement():
     global mea_all, mea_count
     next_motion_time = start_time + DELTA_T
