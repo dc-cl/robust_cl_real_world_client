@@ -18,7 +18,7 @@ from algorithms.DCL_GS import Robot_GS_early_paper, Robot_GS_LRHKF
 from nlink_parser.msg import LinktrackNodeframe2
 
 
-_id = 0                         # id 
+_id = 0                         # id
 NUM_ROBOTS = para.NUM_ROBOTS    # robo个数
 numbers = para.numbers          # robo运动次数
 DELTA_T = para.DELTA_T          # 每次运动时间
@@ -46,8 +46,8 @@ state_lock = threading.lock()
 # int, index about where velocity updates
 v_count = -1
 
-measure_count = 0                # 跟踪测量次数
-v_all = np.zeros((numbers, 2))   # 存储每个robo的速度数据
+measure_count = 0               # 跟踪测量次数
+v_all = np.zeros((numbers, 2))  # 存储每个robo的速度数据
 
 # dict, list all the states updated by algorithms
 state_alg = {}
@@ -61,6 +61,7 @@ back_need = -1
 
 # 这意味着在使用条件变量时，必须先获得 state_lock 的锁，然后才能操作条件变量。
 state_cond = threading.Condition(lock=state_lock)
+
 
 # class of algorithms
 algs_motion, algs_meas, algs_comm = {}, {}, {}
@@ -106,13 +107,17 @@ def init():
     # Initialize
     if n2: 
         for type in types:
-            if type == 28:
+            if type == 20:
+                algs_motion[20] = Robot_GS_early_paper(initial_s=init_X, _id=_id, NUM_ROBOTS=NUM_ROBOTS)
+                algs_meas[20] = Robot_GS_early_paper(initial_s=init_X, _id=_id, NUM_ROBOTS=NUM_ROBOTS)
+                algs_comm[20] = Robot_GS_early_paper(initial_s=init_X, _id=_id, NUM_ROBOTS=NUM_ROBOTS)
+            elif type == 28:    
                 algs_motion[28] = Robot_GS_LRHKF(initial_s=init_X, _id=_id, NUM_ROBOTS=NUM_ROBOTS)
                 algs_meas[28] = Robot_GS_LRHKF(initial_s=init_X, _id=_id, NUM_ROBOTS=NUM_ROBOTS)
                 algs_comm[28] = Robot_GS_LRHKF(initial_s=init_X, _id=_id, NUM_ROBOTS=NUM_ROBOTS)
             elif type == -1:
                 algs_motion[-1] = Robot(X=init_X[_id], _id=_id, NUM_ROBOTS=NUM_ROBOTS)
-            
+            # 初始化状态和协方差矩阵
             if type >= 20:
                 state_alg[type] = np.zeros((numbers, 3*NUM_ROBOTS))
                 cov_alg[type] = np.zeros((numbers, 3*NUM_ROBOTS, 3*NUM_ROBOTS))
@@ -142,8 +147,6 @@ def init():
             while not rospy.is_shutdown():
                 rate.sleep()
     data = []
-    dis =  np.zeros((20, 20, 20), dtype=int)
-    dis_count = -1
     a = TopicSubscriber('LinktrackNodeframe2_0')
     b = TopicSubscriber('LinktrackNodeframe2_1')
     c = TopicSubscriber('LinktrackNodeframe2_2')
@@ -153,10 +156,6 @@ def init():
     for subscriber in (a,b,c):
         if subscriber.id == 1:
             data.append(subscriber)
-    for msg_nodes in data[0].data_list:
-        dis_count+=1
-        for msg in msg_nodes:
-            dis[dis_count][1][msg[0]] = msg[1]
 
 
     ######## Already initialize! ########
@@ -167,7 +166,8 @@ def init():
     Create_broad = False
     # Bool: if 'start_time' is created by this client, then True 用于表示是否创建了启动时间参数
     Create_start_time = False
-
+    # broadcast the communication history and the init information,str_broad 用于存储广播历史的 ROS 参数名
+    # str_broad = '/broadcast_comm_his_GS'
     if not rospy.has_param(str_broad):
         # 'broadcast_comm_his_GS' not be established in the Parameter Server
         broadcast_comm_his_GS = [0 for r2 in range(NUM_ROBOTS*NUM_ROBOTS)]
