@@ -272,16 +272,24 @@ def time_propagation():
 
 
 mea_lock = threading.lock()
+mea_rela_all = np.zeros((numbers, NUM_ROBOTS, 3))
+mea_count = 0
 
-# 实机实验 用标签间获得的距离代替
-def Measurement():
+# 实机实验标签间获得的距离代替 data为标签获得的dis
+def Measurement(data):
     global mea_all, mea_count
+    temp =data[0]
+    mea = temp.data_list
     next_motion_time = start_time + DELTA_T
     while not rospy.is_shutdown():
         measure_time = time.time()
         if measure_time >= next_motion_time:
             next_motion_time += DELTA_T
         else: continue
+        with mea_lock:
+            mea_count += 1
+            for m in mea:
+                mea_rela_all[mea_count, id, :] = m.copy()
 # --------------------
 
 
