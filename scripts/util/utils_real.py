@@ -73,7 +73,21 @@ str_broad_lock = '/broadcast_lock'
 
 # 初始化 start_time 为 None,用于存储程序启动时间
 start_time = None
+
+# 初始化ros节点，发布话题，话题中包含两个字典state_alg = {}、cov_alg = {}
 rospy.init_node('client'+str(_id), anonymous=False)
+# 创建 ROS 发布者
+state_pub = rospy.Publisher('state_data', String, queue_size=10)
+cov_pub = rospy.Publisher('cov_data', String, queue_size=10)
+# 发布第一个数据
+state_msg = String()
+state_msg.data = str(list(state_alg.items())[0])
+state_pub.publish(state_msg)
+
+cov_msg = String()
+cov_msg.data = str(list(cov_alg.items())[0])
+cov_pub.publish(cov_msg)
+rospy.spin()
 
 
 def init():
