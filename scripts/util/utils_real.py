@@ -233,10 +233,11 @@ def motion():
 
     while next_motion_time < final_time:
         if time.time() + delay >= next_motion_time:
+            '''
             msg_robo = f"chassis speed x {velocity[0]} y 0 z {-velocity[1]}"
             s.send(msg_robo.encode('utf-8'))
             buf_robo = s.recv(1024)
-
+            '''
             with v_all_lock:
                 # v_count初始为-1
                 v_count += 1
