@@ -65,7 +65,6 @@ class Robot_GS_EKF:
         if (self.flag >= 0):
             self.Z = np.zeros((self.NUM_ROBOTS, 1))
             self.Z_true = np.zeros((self.NUM_ROBOTS, 1))
-            self.Z_landmark = np.zeros((self.LANDMARK_NUM, 1))
 
         self.X_list = [self.X_GS[3*self._id:3*self._id+3].reshape(3)]
         self.MAEP_list = []
