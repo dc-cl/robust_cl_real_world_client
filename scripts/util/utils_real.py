@@ -88,7 +88,33 @@ cov_msg = String()
 cov_msg.data = str(list(cov_alg.items())[0])
 cov_pub.publish(cov_msg)
 rospy.spin()
+# 控制机器人运动
+rospy.init_node('client' + str(_id), anonymous=False)
 
+vel_pub = rospy.Publisher("/cmd_vel", Twist, queue_size=10)
+# 初始化
+vel_msg = Twist()
+vel_msg.linear.x = 0  # Forward velocity
+vel_msg.angular.z = 0  # No angular velocity initially
+
+rate = rospy.Rate(30)
+motion_count = 0
+
+while not rospy.is_shutdown():
+    while motion_count < 10:
+        start_time = rospy.get_time()
+        if (rospy.get_time()-start_time) <= 1:
+            vel_msg.angular.z = 0.01  # Forward velocity
+        if (rospy.get_time()-start_time) <= 2:
+            vel_msg.linear.x = 0.1
+        vel_pub.publish(vel_msg)
+        motion_count += 1
+        rate.sleep()
+    # 停止运动后机器人不动
+    vel_msg.linear.x = 0  # No linear velocity
+    vel_msg.angular.z = 0  # No Angular velocity
+    vel_pub.publish(vel_msg)
+    rate.sleep()
 
 def init():
     '''
