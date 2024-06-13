@@ -360,8 +360,8 @@ class Robot_GS_EKF:
 
 class Robot_GS_LRHKF(Robot_GS_EKF):
 
-    def __init__(self, initial_s, _id, NUM_ROBOTS, flag, LANDMARK_POS):
-        super().__init__(initial_s, _id, NUM_ROBOTS, flag, LANDMARK_POS)
+    def __init__(self, initial_s, _id, NUM_ROBOTS, flag):
+        super().__init__(initial_s, _id, NUM_ROBOTS, flag)
 
         self.psi_y_time = []
         self.psi_y_all = []
