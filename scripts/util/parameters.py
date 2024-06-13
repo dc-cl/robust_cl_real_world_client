@@ -31,7 +31,7 @@ P_INIT = np.diag(np.tile([0.05 ** 2, 0.05 ** 2, (pi / 180) ** 2], NUM_ROBOTS)) #
 
 # 量测更新的范围要求
 MAESUREMENT_RANGE_BOUND = 5  # [m]
-observation_bearing_bound = pi  # ±[Rad]
+MAESUREMENT_BEARING_BOUND = pi  # ±[Rad]
 
 # 根据效果考虑做的补偿
 E_V_ADD = np.zeros(NUM_ROBOTS)
