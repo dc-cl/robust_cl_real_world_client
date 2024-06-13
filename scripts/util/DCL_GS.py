@@ -26,7 +26,6 @@ RB = parameters.MAESUREMENT_RANGE_BOUND
 BB = parameters.MAESUREMENT_BEARING_BOUND
 
 
-
 def update_para(Q_new, sigma0_omega2_new, sigma_omega2_new):
     global Q, SIGMA0_OMEGA2, SIGMA_OMEGA2
     Q = Q_new.copy()
@@ -42,6 +41,7 @@ def reset_para():
 
 # My innovation!
 
+
 class Robot_GS_EKF:
     def __init__(self, initial_s, _id, NUM_ROBOTS, flag):
         '''
@@ -51,6 +51,7 @@ class Robot_GS_EKF:
         :param: _id: int, _id of robot
         :param: NUM_ROBOTS: int, the number of robots
         :param: flag: int
+        :param: LANDMARK_POS: position of landmarks
         '''
         self.NUM_ROBOTS = NUM_ROBOTS
         self._id = _id
@@ -61,9 +62,10 @@ class Robot_GS_EKF:
 
         self.measuring = np.zeros(NUM_ROBOTS, dtype=bool)
 
-        if (self.flag == -1):
-            self.Z = np.zeros((3*self.NUM_ROBOTS, 1))
-            self.Z_true = np.zeros((3*self.NUM_ROBOTS, 1))
+        if (self.flag >= 0):
+            self.Z = np.zeros((self.NUM_ROBOTS, 1))
+            self.Z_true = np.zeros((self.NUM_ROBOTS, 1))
+            self.Z_landmark = np.zeros((self.LANDMARK_NUM, 1))
 
         self.X_list = [self.X_GS[3*self._id:3*self._id+3].reshape(3)]
         self.MAEP_list = []
@@ -73,16 +75,14 @@ class Robot_GS_EKF:
 
         self.contain_bias_rela = np.zeros(NUM_ROBOTS, dtype=bool)
 
-
     def reset_rela(self):
         '''
         Reset variables about the absolute measurement(landmark)
         '''
-        if (self.flag == -1):
-            self.Z = np.zeros((3*self.NUM_ROBOTS, 1))
-            self.Z_true = np.zeros((3*self.NUM_ROBOTS, 1))
+        if (self.flag >= 0):
+            self.Z = np.zeros((*self.NUM_ROBOTS, 1))
+            self.Z_true = np.zeros((*self.NUM_ROBOTS, 1))
 
-        self.measuring = np.zeros(self.NUM_ROBOTS, dtype=bool)
         self.contain_bias_rela = np.zeros(self.NUM_ROBOTS, dtype=bool)
 
     def motion(self, v, omega):
@@ -113,7 +113,6 @@ class Robot_GS_EKF:
                 F = np.array([[1, 0, -v * DELTA_T * s1],
                              [0, 1, v * DELTA_T * c1], [0, 0, 1]])
             else:
-                # SIGMA_V2即对其他机器人预测近似的正态分布中的线速度的方差
                 Q_now[0, 0] = SIGMA_V2[r]
                 Q_now[1, 1] = SIGMA_OMEGA2[r]
                 F = np.array([[1, 0, -E_V[r] * DELTA_T * s1],
@@ -139,7 +138,6 @@ class Robot_GS_EKF:
             Let each algorithm obtain the same observation values
         :param: measure_bias_whether: list of whether the measurement is biased
         '''
-        # That_true是观测机器人的位姿真值，
         That_true = cla_trues[self._id].X_true.copy()
 
         # other robots
@@ -153,8 +151,10 @@ class Robot_GS_EKF:
                 if measure_bias_whether[r]:
                     self.contain_bias_rela[r] = True
                 self.measure_noise = measure_noises.copy()
-                if (self.flag == -1):
-                    self.Z[3*r:3*r+3] = (X2_ + measure_noises[r, :]).reshape(-1, 1)
+                if (self.flag >= 0):
+                    self.Z[2*r, 0] = _range + measure_noises[r, 0]
+                    self.Z[2*r+1, 0] = bearing + measure_noises[r, 1]
+
 
     def rela_meas_correct(self, count, cla_true=[]):
         '''
@@ -164,24 +164,67 @@ class Robot_GS_EKF:
             if not self.measuring[r]:
                 continue
 
-            if (self.flag == -1):
-                H = np.zeros((3, 3*self.NUM_ROBOTS))
-                Z_now = self.Z[3*r:3*r+3]
+            if (self.flag >= 0):
+                H = np.zeros((2, 3*self.NUM_ROBOTS))
+                Z_cal = np.zeros((2, 1))
+                Z_now = self.Z[2*r:2*r+2]
 
-                gamma = parameters.rot_mat_2d(self.X_GS[3*self._id+2, 0])
+            if (self.flag == 0):
+                dp = self.X_GS[3*r:3*r+2] - self.X_GS[3*self._id:3*self._id+2]
+                rho = np.linalg.norm(dp, ord=2)
+                rho2 = rho**2
+
+                H[0, 3*self._id] = -dp[0]/rho
+                H[0, 3*self._id+1] = -dp[1]/rho
+                H[0, 3*r] = -H[0, 3*self._id]
+                H[0, 3*r+1] = -H[0, 3*self._id+1]
+
+                H[1, 3*self._id] = dp[1]/rho2
+                H[1, 3*self._id+1] = -dp[0]/rho2
+                H[1, 3*self._id+2] = -1
+                H[1, 3*r] = -H[1, 3*self._id]
+                H[1, 3*r+1] = -H[1, 3*self._id+1]
+
+                Z_cal[0, 0] = rho
+                Z_cal[1, 0] = atan2(dp[1], dp[0]) - self.X_GS[3*self._id+2, 0]
+                R2 = (R_0)**2
+
+            elif (self.flag == 1):
+                R = R_0.copy()
+                gamma = parameters.rot_mat_2d(
+                    self.X_GS[3*self._id+2, 0])[0:2, 0:2]
                 J = np.array([[0, -1], [1, 0]])
+                dp = self.X_GS[3*r:3*r+2] - self.X_GS[3*self._id:3*self._id+2]
 
-                dp = self.X_GS[3*r:3*r+3] - self.X_GS[3*self._id:3*self._id+3]
-                H_tilde = np.eye(3)
-                H_tilde[0:2, 2] = (J @ dp[0:2]).reshape(2,)
+                rho, alpha = Z_now[0, 0], Z_now[1, 0]
+
+                alpha_cal = atan2(dp[1], dp[0]) - self.X_GS[3*self._id+2, 0]
+                if (abs(alpha - alpha_cal) > 4):
+                    if alpha - alpha_cal > 0:
+                        alpha = alpha - 2*pi
+                    else:
+                        alpha = alpha + 2*pi
+
+                R[1, 1] = R[1, 1] * rho
+                gamma_bearing = parameters.rot_mat_2d(
+                    alpha)[0:2, 0:2].T  # anticlockwise
+                R2 = gamma_bearing @ R**2 @ gamma_bearing.T
+
+                Z_now[0, 0] = rho * cos(alpha)
+                Z_now[1, 0] = rho * sin(alpha)
+
+                H_tilde = np.hstack((np.eye(2), J @ dp))
 
                 H[:, 3*self._id:3*self._id+3] = gamma @ -H_tilde
-                H[:, 3*r:3*r+3] = gamma
+                H[:, 3*r:3*r+2] = gamma
 
                 Z_cal = gamma @ dp
-                R2 = (R_ALL_1[:3, :3])**2
 
-            v = Z_now - Z_cal
+            if (self.flag == 0 and abs(v[1, 0]) > 4):
+                if (v[1, 0] > 0):
+                    v[1, 0] = v[1, 0] - 2*pi
+                else:
+                    v[1, 0] = v[1, 0] + 2*pi
 
             sigma_invention = H @ self.P_GS @ H.T + R2
 
@@ -216,6 +259,16 @@ class Robot_GS_EKF:
         except np.linalg.LinAlgError:
             return 0
 
+        # condition_number1 = np.linalg.cond(Pi_GS)
+        # condition_number2 = np.linalg.cond(self.P_GS)
+
+        # product1 = np.matmul(inv_P, self.P_GS)
+        # is_identity1 = np.allclose(product1, np.eye(18))
+
+        # product2 = np.matmul(inv_P_i, Pi_GS)
+        # is_identity2 = np.allclose(product2, np.eye(18))
+
+        # X_j, P_j should be sent to robot_j from robot_i
         def fitness(w):
             try:
                 f = np.linalg.inv(w * inv_P + (1-w) * inv_P_i)
@@ -259,16 +312,13 @@ class Robot_GS_EKF:
             sum((self.X_GS[3*self._id:3*self._id+2, 0] - cla_true.X_true[0:2])**2)/2)**(0.5)
 
     def calc_MAEP(self, cla_true):
-        # MAEP(Mean Absolute Estimation Position)表示位置估计的平均绝对误差
         self.MAEP = np.linalg.norm(np.squeeze(
             np.array(self.X_GS[3*self._id:3*self._id+2, 0])) - cla_true.X_true[0:2], ord=1)
 
     def calc_MAEO(self, cla_true):
-        # MAEO(Mean Absolute Estimation Orientation)表示角度估计的平均绝对误差
         self.MAEO = abs(self.X_GS[3*self._id+2, 0] - cla_true.X_true[2])
 
     def calc_ANEES(self, cla_true):
-        # ANEES(Average Normalized Estimation Error Squared)是一个统计量,用于评估滤波器的一致性。它衡量了实际误差与预测误差方差之间的符合程度
         temp0 = (cla_true.X_true[0:2]-self.X_GS[3*self._id:3*self._id+2, 0])
         inv_P = None
         try:
@@ -310,8 +360,8 @@ class Robot_GS_EKF:
 
 class Robot_GS_LRHKF(Robot_GS_EKF):
 
-    def __init__(self, initial_s, _id, NUM_ROBOTS, flag):
-        super().__init__(initial_s, _id, NUM_ROBOTS, flag)
+    def __init__(self, initial_s, _id, NUM_ROBOTS, flag, LANDMARK_POS):
+        super().__init__(initial_s, _id, NUM_ROBOTS, flag, LANDMARK_POS)
 
         self.psi_y_time = []
         self.psi_y_all = []
@@ -331,6 +381,7 @@ class Robot_GS_LRHKF(Robot_GS_EKF):
             return 1
         return self.gamma_thre / abs(zeta_i)
 
+
     def rela_meas_correct(self, count=500):
         '''
         Absolute Measurement update
@@ -347,36 +398,76 @@ class Robot_GS_LRHKF(Robot_GS_EKF):
             if not parameters.is_pos_def(P_pre):
                 return
 
-            if (self.flag == -1):
-                H = np.zeros((3, 3*self.NUM_ROBOTS))
-                Z_cal = np.zeros((3, 1))
-                Z_now = np.zeros((3, 1))
+            if (self.flag >= 0):
+                H = np.zeros((2, 3*self.NUM_ROBOTS))
+                Z_cal = np.zeros((1, 1))
+                Z_now = np.zeros((1, 1))
 
             gamma = parameters.rot_mat_2d(self.X_GS[3*self._id+2, 0])
             dp = self.X_GS[3*r:3*r+3] - self.X_GS[3*self._id:3*self._id+3]
+            if (self.flag == 0):
+                rho = np.linalg.norm(dp[:2, :], ord=2)
+                rho2 = rho**2
 
-            if (self.flag == -1):
+                H[0, 3*self._id] = -dp[0]/rho
+                H[0, 3*self._id+1] = -dp[1]/rho
+                H[0, 3*r] = -H[0, 3*self._id]
+                H[0, 3*r+1] = -H[0, 3*self._id+1]
+
+                H[1, 3*self._id] = dp[1]/rho2
+                H[1, 3*self._id+1] = -dp[0]/rho2
+                H[1, 3*self._id+2] = -1
+                H[1, 3*r] = -H[1, 3*self._id]
+                H[1, 3*r+1] = -H[1, 3*self._id+1]
+
+                Z_cal[0, 0] = rho
+                Z_cal[1, 0] = atan2(dp[1], dp[0]) - self.X_GS[3*self._id+2, 0]
+                Z_now = self.Z[2*r:2*r+2, :]
+
+                R2 = R_0**2
+
+            elif (self.flag == 1):
+                R = R_0.copy()
+                gamma_ = gamma[0:2, 0:2]
                 J = np.array([[0, -1], [1, 0]])
+                rho, alpha = self.Z[2*r, 0], self.Z[2*r+1, 0]
 
-                H_tilde = np.eye(3)
-                H_tilde[0:2, 2] = (J @ dp[0:2]).reshape(2,)
+                alpha_cal = atan2(dp[1], dp[0]) - self.X_GS[3*self._id+2, 0]
+                if (abs(alpha - alpha_cal) > 4):
+                    if alpha - alpha_cal > 0:
+                        alpha = alpha - 2*pi
+                    else:
+                        alpha = alpha + 2*pi
 
-                H[0:3, 3*self._id:3*self._id+3] = gamma @ -H_tilde
-                H[0:3, 3*r:3*r+3] = gamma
+                R[1, 1] = R[1, 1] * rho
+                gamma_bearing = parameters.rot_mat_2d(
+                    alpha)[0:2, 0:2].T  # anticlockwise
+                R2 = gamma_bearing @ R**2 @ gamma_bearing.T
 
-                Z_cal[0:3, :] = gamma @ dp
+                Z_now[0, 0] = rho * cos(alpha)
+                Z_now[1, 0] = rho * sin(alpha)
 
-                Z_now[0:3, :] = self.Z[3*r:3*r+3, :]
+                # dp = self.X_GS[3*r:3*r+2] - self.X_GS[3*self._id:3*self._id+2]
 
-                R2 = R_1**2
+                H_tilde = np.hstack((np.eye(2), J @ dp[:2]))
+
+                H[:, 3*self._id:3*self._id+3] = gamma_ @ -H_tilde
+                H[:, 3*r:3*r+2] = gamma_
+
+                Z_cal[0:2, :] = gamma_ @ dp[:2]
 
             v = Z_now - Z_cal
+            if (self.flag == 0) and (abs(v[1, 0]) > 4):
+                if (v[1, 0] > 0):
+                    v[1, 0] = v[1, 0] - 2*pi
+                else:
+                    v[1, 0] = v[1, 0] + 2*pi
 
             # A matrix S contains 2 matrixs: P_prediction and R at the diagonal of that matrix
-            if (self.flag == -1):
-                S = np.zeros((3*self.NUM_ROBOTS + 3, 3*self.NUM_ROBOTS + 3))
-                S[:3, :3] = R2.copy()
-                Psi = np.eye(3*self.NUM_ROBOTS + 3)
+            if (self.flag >= 0):
+                S = np.zeros((3*self.NUM_ROBOTS + 2, 3*self.NUM_ROBOTS + 2))
+                S[:2, :2] = R2.copy()
+                Psi = np.eye(3*self.NUM_ROBOTS + 2)
 
             S[-3*self.NUM_ROBOTS:, -3*self.NUM_ROBOTS:] = P_pre.copy()
             S_ = sqrtm(np.linalg.inv(S)).real
@@ -405,8 +496,8 @@ class Robot_GS_LRHKF(Robot_GS_EKF):
                     Zeta = z - M @ X_all
                     Zeta = [self.psi(eles[0]) for eles in Zeta]
                     Psi = np.diag(Zeta)
-                if (self.flag == -1):
-                    Psi_y = Psi[:3, :3]
+                if (self.flag >= 0):
+                    Psi_y = Psi[:2, :2]
 
                 Psi_x = Psi[-3*self.NUM_ROBOTS:, -3*self.NUM_ROBOTS:]
 
@@ -426,9 +517,10 @@ class Robot_GS_LRHKF(Robot_GS_EKF):
 
             if total_no:
                 continue
-'''
+
             # mission 2 only, v1.0.0 original division
             # if count <= 500 or self.contain_bias_rela[r]:
+
             # mission 2 only, v1.1.0 original division
             if 3*count < 1000 or self.contain_bias_rela[r] or 3*count >= 2000:
                 self.psi_y_all.append(np.diag(Psi_y))  # For output
@@ -442,4 +534,3 @@ class Robot_GS_LRHKF(Robot_GS_EKF):
             self.psi_y_all = []
         else:
             self.psi_y_time.append(np.full((3,), np.nan))
-'''
