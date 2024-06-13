@@ -2,7 +2,7 @@ import numpy as np
 from math import atan2, cos, sin, pi
 import parameters
 
-from algorithms.DR import Robot
+from DR import Robot
 from scipy.optimize import minimize_scalar
 
 R_1 = parameters.R_1
