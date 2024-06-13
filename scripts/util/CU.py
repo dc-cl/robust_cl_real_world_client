@@ -1,7 +1,7 @@
 from scipy.linalg import sqrtm
-from algorithms.func_detect_fault import Maha
-from algorithms.BDA import Robot_BDA_EKF
-from algorithms.CI import Robot_CI
+from func_detect_fault import Maha
+from BDA import Robot_BDA_EKF
+from CI import Robot_CI
 import parameters
 import numpy as np
 from scipy.optimize import minimize_scalar
