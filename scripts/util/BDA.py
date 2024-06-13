@@ -2,7 +2,7 @@ import numpy as np
 from math import atan2, pi, sin, cos
 import parameters
 
-from algorithms.DR import Robot
+from DR import Robot
 
 
 R_0 = parameters.R_0
