@@ -12,13 +12,14 @@ from std_msgs.msg import Float64MultiArray
 from visualization_msgs.msg import Marker
 from geometry_msgs.msg import Point
 import parameters as para
-import matplotlib.pyplot as plt
-import scienceplots
+# import matplotlib.pyplot as plt
+# import scienceplots
+from algorithms.DR import Robot
 from algorithms.DCL_GS import Robot_GS_early_paper, Robot_GS_LRHKF
 from nlink_parser.msg import LinktrackNodeframe2
 
 
-_id = rospy.get_param('~id', 0)                         # id
+_id = rospy.get_param('~id', 0) # id
 NUM_ROBOTS = para.NUM_ROBOTS    # robo个数
 numbers = para.numbers          # robo运动次数
 DELTA_T = para.DELTA_T          # 每次运动时间
@@ -26,6 +27,7 @@ total_time = numbers * DELTA_T  # 总共运行时间 包含多次运动
 types = para.types              # 算法种类
 init_X = para.init_X            # robo初始位置
 init_v = para.init_v            # robo初始理论输入速度
+np.random.seed(_id)             # 随机种子
 
 # 式（32）（33）
 SIGMA_V_INPUT, SIGMA_OMEGA_INPUT = para.SIGMA_V_INPUT, para.SIGMA_OMEGA_INPUT
@@ -34,7 +36,7 @@ E_V, E_OMEGA = para.E_V, para.E_OMEGA
 sigma_v_input_, sigma_omega_input_ = SIGMA_V_INPUT, SIGMA_OMEGA_INPUT
 E_v_, E_omega_ = E_V, E_OMEGA
 
-alg_count = len(types)
+alg_count = len(types) # 需要运行几个算法
 # -1表示包含DR
 if -1 in types:
     alg_count -= 1
@@ -43,7 +45,7 @@ if -1 in types:
 v_all_lock = threading.lock()
 state_lock = threading.lock()
 
-# int, index about where velocity updates
+# int, index about where velocity updates 表示最新的速度数据的索引 v_count+1即为一共有多少个速度 保持最新
 v_count = -1
 
 measure_count = 0               # 跟踪测量次数
@@ -71,49 +73,51 @@ str_broad = '/broadcast_comm_his_GS'
 # A lock about 'broadcast_comm_his_GS',定义一个字符串 str_broad_lock,用于存储广播历史锁的 ROS 参数名
 str_broad_lock = '/broadcast_lock'
 
-# 初始化 start_time 为 None,用于存储程序启动时间
+# 初始化 start_time 为 None,用于存储所有机器人启动的时间
 start_time = None
 
 # 初始化ros节点，发布话题，话题中包含两个字典state_alg = {}、cov_alg = {}
 rospy.init_node('client'+str(_id), anonymous=False)
+
+# TODO 是否保留
 # 创建 ROS 发布者
-state_pub = rospy.Publisher('state_data', String, queue_size=10)
-cov_pub = rospy.Publisher('cov_data', String, queue_size=10)
-# 发布第一个数据
-state_msg = String()
-state_msg.data = str(list(state_alg.items())[0])
-state_pub.publish(state_msg)
+# state_pub = rospy.Publisher('state_data', String, queue_size=10)
+# cov_pub = rospy.Publisher('cov_data', String, queue_size=10)
+# # 发布第一个数据
+# state_msg = String()
+# state_msg.data = str(list(state_alg.items())[0])
+# state_pub.publish(state_msg)
 
-cov_msg = String()
-cov_msg.data = str(list(cov_alg.items())[0])
-cov_pub.publish(cov_msg)
-rospy.spin()
+# cov_msg = String()
+# cov_msg.data = str(list(cov_alg.items())[0])
+# cov_pub.publish(cov_msg)
+# # rospy.spin()
 
-# 控制机器人运动
-vel_pub = rospy.Publisher("/cmd_vel", Twist, queue_size=10)
-# 初始化
-vel_msg = Twist()
-vel_msg.linear.x = 0  # Forward velocity
-vel_msg.angular.z = 0  # No angular velocity initially
+# # 控制机器人运动
+# vel_pub = rospy.Publisher("/cmd_vel", Twist, queue_size=10)
+# # 初始化
+# vel_msg = Twist()
+# vel_msg.linear.x = 0  # Forward velocity
+# vel_msg.angular.z = 0  # No angular velocity initially
 
-rate = rospy.Rate(30)
-motion_count = 0
+# rate = rospy.Rate(30)
+# motion_count = 0
 
-while not rospy.is_shutdown():
-    while motion_count < 10:
-        start_time = rospy.get_time()
-        if (rospy.get_time()-start_time) <= 1:
-            vel_msg.angular.z = 0.01  # Forward velocity
-        if (rospy.get_time()-start_time) <= 2:
-            vel_msg.linear.x = 0.1
-        vel_pub.publish(vel_msg)
-        motion_count += 1
-        rate.sleep()
-    # 停止运动后机器人不动
-    vel_msg.linear.x = 0  # No linear velocity
-    vel_msg.angular.z = 0  # No Angular velocity
-    vel_pub.publish(vel_msg)
-    rate.sleep()
+# while not rospy.is_shutdown():
+#     while motion_count < 10:
+#         start_time = rospy.get_time()
+#         if (rospy.get_time()-start_time) <= 1:
+#             vel_msg.angular.z = 0.01  # Forward velocity
+#         if (rospy.get_time()-start_time) <= 2:
+#             vel_msg.linear.x = 0.1
+#         vel_pub.publish(vel_msg)
+#         motion_count += 1
+#         rate.sleep()
+#     # 停止运动后机器人不动
+#     vel_msg.linear.x = 0  # No linear velocity
+#     vel_msg.angular.z = 0  # No Angular velocity
+#     vel_pub.publish(vel_msg)
+#     rate.sleep()
 
 def init():
     '''
@@ -137,7 +141,7 @@ def init():
     '''
 
     ###### Software init Start######
-    global start_time, state_alg, cov_alg, algs_motion, alg_meas, algs_comm
+    global start_time, state_alg, cov_alg, algs_motion, algs_meas, algs_comm
 
     meas_bia_prob, comm_fail_prob = para.meas_bia_prob, para.comm_fail_prob
     print(f"meas_bia_prob = {meas_bia_prob}, comm_fail_prob = {comm_fail_prob}")
@@ -204,9 +208,9 @@ def init():
     # Register 通过这段代码，机器人能够在ROS系统中同步初始化完成的状态和启动时间，以便它们在后续的操作中能够同步进行
     # start time,定义了一个 ROS 参数名称 /start_time，用于存储程序的启动时间。
     str_start_time = '/start_time'
-    # Bool: if 'broadcast_comm_his_GS' is created by this client, then True 用于表示当前节点是否创建了通信历史参数
+    # Bool: if 'broadcast_comm_his_GS' is created by this client, then True DEBUG 用于表示当前节点是否创建了通信历史参数
     Create_broad = False
-    # Bool: if 'start_time' is created by this client, then True 用于表示是否当前节点创建了启动时间参数
+    # Bool: if 'start_time' is created by this client, then True DEBUG 用于表示是否当前节点创建了启动时间参数
     Create_start_time = False
     # broadcast the communication history and the init information,str_broad 用于存储广播历史的 ROS 参数名
     str_broad = '/broadcast_comm_his_GS'
@@ -214,11 +218,12 @@ def init():
         # 'broadcast_comm_his_GS' not be established in the Parameter Server
         broadcast_comm_his_GS = [0 for r2 in range(NUM_ROBOTS*NUM_ROBOTS)]
         # 将当前客户端的通信次数标记为 1
-        broadcast_comm_his_GS[(NUM_ROBOTS + 1)*_id] = 1
+        broadcast_comm_his_GS[(NUM_ROBOTS + 1)*_id] = 1 # NUM_ROBOTS*_id+_id reshape成矩阵，相当于跟自身的通信次数，以此判断是否初始化成功
         rospy.set_param(str_broad, broadcast_comm_his_GS)
         Create_broad = True
 
-    if not Create_broad:
+    # if not Create_broad:
+    else:
         # 'broadcast_comm_his_GS' has been established, need to update
         # 首先等待 str_broad_lock 参数不存在,然后将其设置为 True。这个锁是为了防止多个客户端同时更新 broadcast_comm_his_GS 参数
         while rospy.has_param(str_broad_lock):
@@ -226,7 +231,7 @@ def init():
         else: rospy.set_param(str_broad_lock, True)
         broadcast_comm_his_GS = rospy.get_param(str_broad)
         # 将当前客户端的通信次数标记为 1,所以最初将state_count = [0, 0, -1]的通信设置为-1，就是为了在此加入一个初始化
-        broadcast_comm_his_GS[(NUM_ROBOTS + 1)*_id] = 1
+        broadcast_comm_his_GS[(NUM_ROBOTS + 1)*_id] = 1 # 同上
         # 遍历 broadcast_comm_his_GS 列表,检查是否所有机器人的通信次数都大于 0,表示所有机器人都已初始化完成
         for r in range(NUM_ROBOTS):
             if broadcast_comm_his_GS[(NUM_ROBOTS + 1)*r] <= 0: break
@@ -247,11 +252,12 @@ def init():
         start_time = rospy.get_param(str_start_time)
 # ---------------------------------
 
-
+# TODO liuyh 更新代码 控制机器人运动
 def motion():
     global v_all, v_count, next_motion_time
     delay = 0.1
     while start_time is None:
+        # 所有机器人还没初始化完成
         rospy.sleep(0.1)
 
     next_motion_time = start_time
@@ -277,15 +283,15 @@ def time_propagation():
     while not rospy.is_shutdown():
         v_update = None
         with state_lock:
-            v_count_local = state_count[0]
+            v_count_local = state_count[0] # 获取当前运动的更新到了哪一步
         with v_all_lock:
             if v_count > v_count_local:
-                v_update = v_all[v_count_local].copy()
+                v_update = v_all[v_count_local].copy() # 当前状态更新需要的速度
 
         if v_update is not None:       
             with state_lock:
                 for type in types:
-                    if state_count[1] >= v_count_local:
+                    if state_count[1] >= v_count_local: # TODO WHY
                         # time_propagation, the belief after measurement update can be obtained
                         # index of belief in algs_motion equals to v_count_local
                         if type >= 20:
@@ -293,7 +299,8 @@ def time_propagation():
                             algs_motion[type].P_GS = cov_alg[type][v_count_local].copy()
                         # TODO ()other type of alg
                     
-                    algs_motion[type].motion(v = v_all[v_count_local, 0], omega = v_all[v_count_local, 1])
+                    # algs_motion[type].motion(v = v_all[v_count_local, 0], omega = v_all[v_count_local, 1]) 这个不对 v_all是全局变量
+                    algs_motion[type].motion(v = v_update[0], omega = v_update[1])
                     
                     # Why v_count_local + 1? because this is prediction
                     if type >= 20:
@@ -310,12 +317,12 @@ def time_propagation():
 
 
 mea_lock = threading.lock()
-mea_rela_all = np.zeros((numbers, NUM_ROBOTS, 3))
-mea_count = 0
+mea_rela_all = np.zeros((numbers, NUM_ROBOTS, 1)) # 只有一个距离
+mea_count = 0 # 最新的测量数据的索引，保持最新 下标对应时刻的下标，所以从0开始
 
 # 实机实验标签间获得的距离代替 data为标签获得的dis
 def Measurement(data):
-    global mea_all, mea_count
+    global mea_rela_all, mea_count
     temp = data[0]
     mea = temp.data_list
     next_motion_time = start_time + DELTA_T
@@ -332,7 +339,7 @@ def Measurement(data):
 
 
 def Mea_update():
-    global state_count, state_alg, cov_alg, algs_meas
+    global state_count, state_alg, cov_alg, algs_meas, mea_rela_all, mea_count
     Need_Update = False
     while not rospy.is_shutdown():
         with state_cond:
@@ -343,6 +350,7 @@ def Mea_update():
             else: mea_count_local = state_count[1]
 
         with mea_lock:
+            # 2种情况：1.常规更新 2.时间传播重新更新
             if mea_count > mea_count_local:
                 Need_Update = True
                 for type in types:
@@ -396,29 +404,29 @@ def Comm_send():
     comm_interval = DELTA_T * COMM_RATE
     comm_complete = False
     
-    pub = rospy.Publisher('comm', Float64MultiArray, queue_size=10)
+    pub = rospy.Publisher('comm', Float64MultiArray, queue_size=10) # TODO 不同机器人发布和接收不同话题
     while not rospy.is_shutdown():
         curr_comm_times = time.time() - start_time
         if not comm_complete and \
             (curr_comm_times > comm_interval * comm_times and curr_comm_times < comm_interval * (comm_times + 1)) \
-            and comm_times < numbers:
+            and comm_times < numbers/COMM_RATE:
 
             while rospy.has_param(str_broad_lock):
                 rospy.sleep(1e-3)
             else: rospy.set_param(str_broad_lock, True)
             broadcast_comm_his_GS = rospy.get_param(str_broad)
-            # 说明这是第一次获取通信数据,需要进行一些初始化操作
+            # 说明这是第一次发布通信数据,需要进行一些初始化操作
             if state_comm is None:
-                broadcast_comm_his_GS[(NUM_ROBOTS+1)*_id] = comm_times  # 更新当前机器人在广播历史中的通信次数
+                broadcast_comm_his_GS[(NUM_ROBOTS+1)*_id] = comm_times  # 使得对自己通信的次数最大
                 for r in range(NUM_ROBOTS):
-                    # 如果某个机器人的通信次数超过了 numbers,则减去 numbers。这可能是为了防止通信次数过大导致的数值溢出问题
+                    # 如果某个机器人的通信次数超过了 numbers,则减去 numbers。这是由于上次已经更新后设置为+numbers TODO 是否保留
                     if broadcast_comm_his_GS[NUM_ROBOTS*_id + r] > numbers:
                         broadcast_comm_his_GS[NUM_ROBOTS*_id + r] -= numbers
-                rospy.get_param(str_broad, broadcast_comm_his_GS)  # 将更新后的广播历史重新设置回ROS参数服务器
+                rospy.set_param(str_broad, broadcast_comm_his_GS)  # 将更新后的广播历史重新设置回ROS参数服务器
             rospy.delete_param(str_broad_lock) # 删除掉 str_broad_lock 参数,释放对广播历史的独占访问权
 
             if state_comm is None:
-                # 1st: Obtain the belief for comm，这段代码是在处理 state_comm 为 None 的情况,即第一次获取通信数据
+                # 1st: Obtain the belief for comm，这段代码是在处理 state_comm 为 None 的情况,即开始发布通信数据
                 with state_cond:
                     # type[0]
                     if np.all(state_alg[types[0]][comm_times*COMM_RATE-1, :]) == 0:
@@ -435,13 +443,13 @@ def Comm_send():
             
             # 根据广播历史中各机器人的通信次数对机器人ID进行排序，得到 comm_1st_order 列表
             comm_1st_order = sorted(np.arange(NUM_ROBOTS), key = lambda i: broadcast_comm_his_GS[NUM_ROBOTS*_id + i])
-            # 检查排序后的第一个机器人是否已经完成了本次通信。如果是，则设置 comm_complete = True
+            # 检查排序后的第一个机器人是否已经完成了本次通信，说明所有机器人在comm_times下已完成通信。如果是，则设置 comm_complete = True
             if broadcast_comm_his_GS[NUM_ROBOTS*_id + comm_1st_order[0]] == comm_times:
                 comm_complete = True
             else:
                 # 设置消息的接收机器人ID为排序后的第一个机器人
                 message.data[0] = comm_1st_order[0]
-                # message[1] = _id
+                message[1] = _id
                 message.data[2] = comm_times
                 # Each algorithm needs NUM_ROBOTS*(NUM_ROBOTS+1)
                 num = 0
@@ -453,12 +461,12 @@ def Comm_send():
                 pub.publish(message)
         else:
             with comm_lock:
-                with state_lock:
-                    state_alg[type][comm_times*COMM_RATE-1] = state_comm[type].copy()
-                    cov_alg[type][comm_times*COMM_RATE-1] = cov_comm[type].copy()
-                    state_count[0] = comm_times*COMM_RATE-1
-                    state_count[1] = comm_times*COMM_RATE-1
-                    back_need = comm_times*COMM_RATE-1
+                # with state_lock:
+                #     state_alg[type][comm_times*COMM_RATE-1] = state_comm[type].copy()
+                #     cov_alg[type][comm_times*COMM_RATE-1] = cov_comm[type].copy()
+                #     state_count[0] = comm_times*COMM_RATE-1
+                #     state_count[1] = comm_times*COMM_RATE-1
+                    # back_need = comm_times*COMM_RATE-1
                 
                 state_comm, cov_comm = None, None
                 comm_count += 1
@@ -469,12 +477,22 @@ def Comm_send():
 def Comm_recv_callback(recv):
     # 首先检查接收到的消息的接收者 ID 是否与当前机器人的 ID 匹配,如果不匹配则直接返回。
     if int(recv.data[0]) != _id: return
+    global state_comm, cov_comm
     # 初始化接收标志 succ_recv 为 False
     succ_recv = False
     state_recv, cov_recv = {}, {}
-    with comm_lock:
-        # 检查接收到的消息的通信次数是否与当前机器人的通信次数匹配
-        if int(recv.data[2]) == comm_count:
+    
+    while rospy.has_param(str_broad_lock):
+        rospy.sleep(1e-3)
+    else: rospy.set_param(str_broad_lock, True)
+    broadcast_comm_his_GS = rospy.get_param(str_broad)
+    comm_self = broadcast_comm_his_GS[NUM_ROBOTS*recv.data[1] + _id].copy()
+    rospy.delete_param(str_broad_lock)
+
+    # 检查接收到的消息的通信次数是否与当前机器人的通信次数匹配
+    if comm_self < int(recv.data[2]):
+        with comm_lock:
+            # if int(recv.data[2]) == comm_count:
             succ_recv = True
             for type in types:
                 if type == -1: continue
@@ -505,10 +523,16 @@ def Comm_recv_callback(recv):
                 broadcast_comm_his_GS[NUM_ROBOTS*recv.data[1] + _id] += numbers
             rospy.delete_param(str_broad_lock)
 
-        with comm_lock:
-            for type in types:
-                state_comm[type] = algs_comm[type].X_GS.copy()
-                cov_comm[type]=  algs_comm[type].P_GS.copy()
+        # with comm_lock:
+        #     for type in types:
+        #         state_comm[type] = algs_comm[type].X_GS.copy()
+        #         cov_comm[type]=  algs_comm[type].P_GS.copy()
+            if can:
+                with state_lock:
+                    state_alg[type][recv.data[2]*COMM_RATE-1] = state_comm[type].copy()
+                    cov_alg[type][recv.data[2]*COMM_RATE-1] = cov_comm[type].copy()
+                    state_count[0] = recv.data[2]*COMM_RATE-1
+                    state_count[1] = recv.data[2]*COMM_RATE-1
 
 
 def Comm_recv():
@@ -516,71 +540,71 @@ def Comm_recv():
     rospy.spin()
 
 
-color_r = [1.0, ]
-color_g = [0.0, ]
-color_b = [0.0, ]
+# color_r = [1.0, ]
+# color_g = [0.0, ]
+# color_b = [0.0, ]
 
-count = 0
-markers = {}
-for typ in types:
-    markers[typ] = Marker()
-    # marker.header.frame_id = "base_link"  # Set the frame ID
-    # marker.header.stamp = rospy.Time.now()
-    markers[typ].type = Marker.POINTS
-    markers[typ].action = Marker.ADD
-    markers[typ].pose.orientation.w = 1.0
-    markers[typ].scale.x = 0.1  # Point size
-    markers[typ].scale.y = 0.1
-    markers[typ].color.r = 1.0  # Red color
-    markers[typ].color.a = 1.0  # Full opacity
+# count = 0
+# markers = {}
+# for typ in types:
+#     markers[typ] = Marker()
+#     # marker.header.frame_id = "base_link"  # Set the frame ID
+#     # marker.header.stamp = rospy.Time.now()
+#     markers[typ].type = Marker.POINTS
+#     markers[typ].action = Marker.ADD
+#     markers[typ].pose.orientation.w = 1.0
+#     markers[typ].scale.x = 0.1  # Point size
+#     markers[typ].scale.y = 0.1
+#     markers[typ].color.r = 1.0  # Red color
+#     markers[typ].color.a = 1.0  # Full opacity
 
-    count += 1
+#     count += 1
 
-def Send2rviz():
-    marker_publisher = {}
-    for typ in types:
-        marker_publisher[typ] = rospy.Publisher(str(_id) + 'tra' + str(type), Marker, queue_size=10)
-    # time, time_max, mea, mea_max
-    state_count_local = [-1, 0]
-    while not rospy.is_shutdown():
-        with state_lock:
-            if back_need < state_count_local[1]: state_count_local[1] = back_need
-            if state_count[0] > state_count_local[0]:
-                while state_count_local[0] < state_count[0]:
-                    state_count_local[0] += 1
-                    for typ in types:
-                        point = Point()
-                        if typ >= 20:
-                            point.x = state_alg[typ][state_count_local[0], 3*_id+0]
-                            point.y = state_alg[typ][state_count_local[0], 3*_id+1]
-                            point.z = state_alg[typ][state_count_local[0], 3*_id+2]
-                        else:
-                            point.x = state_alg[typ][state_count_local[0], 0]
-                            point.y = state_alg[typ][state_count_local[0], 1]
-                            point.z = state_alg[typ][state_count_local[0], 2]
+# def Send2rviz():
+#     marker_publisher = {}
+#     for typ in types:
+#         marker_publisher[typ] = rospy.Publisher(str(_id) + 'tra' + str(type), Marker, queue_size=10)
+#     # time, time_max, mea, mea_max
+#     state_count_local = [-1, 0]
+#     while not rospy.is_shutdown():
+#         with state_lock:
+#             if back_need < state_count_local[1]: state_count_local[1] = back_need
+#             if state_count[0] > state_count_local[0]:
+#                 while state_count_local[0] < state_count[0]:
+#                     state_count_local[0] += 1
+#                     for typ in types:
+#                         point = Point()
+#                         if typ >= 20:
+#                             point.x = state_alg[typ][state_count_local[0], 3*_id+0]
+#                             point.y = state_alg[typ][state_count_local[0], 3*_id+1]
+#                             point.z = state_alg[typ][state_count_local[0], 3*_id+2]
+#                         else:
+#                             point.x = state_alg[typ][state_count_local[0], 0]
+#                             point.y = state_alg[typ][state_count_local[0], 1]
+#                             point.z = state_alg[typ][state_count_local[0], 2]
 
-                        markers[typ].points.append(point)
-                        markers[typ].header.frame_id = state_count_local[0]
-                        markers[typ].header.stamp = start_time + DELTA_T*state_count_local[0]
+#                         markers[typ].points.append(point)
+#                         markers[typ].header.frame_id = state_count_local[0]
+#                         markers[typ].header.stamp = start_time + DELTA_T*state_count_local[0]
             
-            elif state_count[1] > state_count_local[1]:
-                while state_count_local[1] < state_count[1]:
-                    state_count_local[1] += 1
-                    for typ in types:
-                        point = Point()
-                        if typ >= 20:
-                            point.x = state_alg[typ][state_count_local[0], 3*_id+0]
-                            point.y = state_alg[typ][state_count_local[0], 3*_id+1]
-                            point.z = state_alg[typ][state_count_local[0], 3*_id+2]
-                        else:
-                            point.x = state_alg[typ][state_count_local[0], 0]
-                            point.y = state_alg[typ][state_count_local[0], 1]
-                            point.z = state_alg[typ][state_count_local[0], 2]
+#             elif state_count[1] > state_count_local[1]:
+#                 while state_count_local[1] < state_count[1]:
+#                     state_count_local[1] += 1
+#                     for typ in types:
+#                         point = Point()
+#                         if typ >= 20:
+#                             point.x = state_alg[typ][state_count_local[0], 3*_id+0]
+#                             point.y = state_alg[typ][state_count_local[0], 3*_id+1]
+#                             point.z = state_alg[typ][state_count_local[0], 3*_id+2]
+#                         else:
+#                             point.x = state_alg[typ][state_count_local[0], 0]
+#                             point.y = state_alg[typ][state_count_local[0], 1]
+#                             point.z = state_alg[typ][state_count_local[0], 2]
                         
-                        markers[typ].points[state_count_local[1]] = point.copy()
+#                         markers[typ].points[state_count_local[1]] = point.copy()
         
-        for typ in types:
-            marker_publisher[typ].publish(markers[typ])
+#         for typ in types:
+#             marker_publisher[typ].publish(markers[typ])
 
     
 if __name__ == '__main__':
