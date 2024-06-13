@@ -8,7 +8,7 @@ NUM_ROBOTS = 3
 init_X = [[0, 6, 0], [0, 0, 0], [1, -3, 0]]
 init_v = [[.1, .1], [.2, .2], [.3, .3]]
 # types为一个数组，不同数字表示不同的算法类型
-type = [28]
+types = [28]
 '''
     flag: int, observation model
         1 range-bearing and transform to relative position
