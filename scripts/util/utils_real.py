@@ -288,7 +288,7 @@ mea_count = 0
 # 实机实验标签间获得的距离代替 data为标签获得的dis
 def Measurement(data):
     global mea_all, mea_count
-    temp =data[0]
+    temp = data[0]
     mea = temp.data_list
     next_motion_time = start_time + DELTA_T
     while not rospy.is_shutdown():
