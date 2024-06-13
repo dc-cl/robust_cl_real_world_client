@@ -5,7 +5,7 @@ from scipy.optimize import minimize_scalar, root_scalar
 from scipy.linalg import sqrtm
 from scipy.special import erf
 import time
-from algorithms.func_detect_fault import Maha
+from func_detect_fault import Maha
 
 Q = parameters.Q
 Q_B = parameters.Q_B  # 用来加噪声的
