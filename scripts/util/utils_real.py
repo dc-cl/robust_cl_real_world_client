@@ -15,7 +15,7 @@ import parameters as para
 # import matplotlib.pyplot as plt
 # import scienceplots
 from DR import Robot
-from DCL_GS import Robot_GS_early_paper, Robot_GS_LRHKF
+from DCL_GS import Robot_GS_LRHKF
 from nlink_parser.msg import LinktrackNodeframe2
 
 
@@ -150,11 +150,13 @@ def init():
     # Initialize
     if n2: 
         for type in types:
+            '''
             if type == 20:
                 algs_motion[20] = Robot_GS_early_paper(initial_s=init_X, _id=_id, NUM_ROBOTS=NUM_ROBOTS)
                 algs_meas[20] = Robot_GS_early_paper(initial_s=init_X, _id=_id, NUM_ROBOTS=NUM_ROBOTS)
                 algs_comm[20] = Robot_GS_early_paper(initial_s=init_X, _id=_id, NUM_ROBOTS=NUM_ROBOTS)
-            elif type == 28:    
+            '''
+            if type == 28:    
                 algs_motion[28] = Robot_GS_LRHKF(initial_s=init_X, _id=_id, NUM_ROBOTS=NUM_ROBOTS)
                 algs_meas[28] = Robot_GS_LRHKF(initial_s=init_X, _id=_id, NUM_ROBOTS=NUM_ROBOTS)
                 algs_comm[28] = Robot_GS_LRHKF(initial_s=init_X, _id=_id, NUM_ROBOTS=NUM_ROBOTS)
