@@ -58,7 +58,7 @@ class Robot_GS_EKF:
         self.flag = flag
         self.X_GS = np.array(initial_s, dtype='float64').reshape(
             (3*self.NUM_ROBOTS, 1))
-        self.P_GS = parameters.P_ALL_INIT.copy()
+        self.P_GS = parameters.P_INIT.copy()
 
         self.measuring = np.zeros(NUM_ROBOTS, dtype=bool)
 
