@@ -169,22 +169,25 @@ def init():
                 state_alg[type][0,:3] = np.array(init_X[_id])
     
     ######## hardware init starts ##########
-    # # 1. 初始化，接受三个话题的数据
-    # class TopicSubscriber:
-    #     def __init__(self,topic_name):
-    #         # 初始化 ROS 节点
-    #         rospy.init_node('topic_subscriber', anonymous=True)
-    #         # 订阅话题
-    #         self.sub = rospy.Subscriber(topic_name, LinktrackNodeframe2, self.callback)
-    #         # 存储数据
-    #         self.data_list = []
-    #     def callback(self, msg_data,msg_nodes):
-    #         self.id = msg_data.id
-    #         self.data_list.append(msg_nodes)
-    #     def run(self):
-    #         rate = rospy.Rate(10)  # 10 Hz
-    #         while not rospy.is_shutdown():
-    #             rate.sleep()
+     # 1. 初始化，接受三个话题的数据
+    class TopicSubscriber:
+        def __init__(self,topic_name):
+            # 初始化 ROS 节点
+            rospy.init_node('topic_subscriber', anonymous=True)
+            # 订阅话题
+            self.sub = rospy.Subscriber(topic_name, LinktrackNodeframe2, self.callback)
+            # 存储数据
+            self.data_list = []
+        def callback(self, msg_data):
+            # self.id = msg_data.id
+            # 遍历 nodes 数组并获取 dis 数据
+            for node in msg_data.nodes:
+                dis_data = node.dis
+                self.dis_list.append(dis_data)  # 存储每个 node 的 dis 数据
+        def run(self):
+            rate = rospy.Rate(10)  # 10 Hz
+            while not rospy.is_shutdown():
+                rate.sleep()
     # data = []
     # a = TopicSubscriber('LinktrackNodeframe2_0')
     # b = TopicSubscriber('LinktrackNodeframe2_1')
