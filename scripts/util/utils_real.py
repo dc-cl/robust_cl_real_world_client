@@ -18,7 +18,7 @@ from algorithms.DCL_GS import Robot_GS_early_paper, Robot_GS_LRHKF
 from nlink_parser.msg import LinktrackNodeframe2
 
 
-_id = 0                         # id
+_id = rospy.get_param('~id', 0)                         # id
 NUM_ROBOTS = para.NUM_ROBOTS    # robo个数
 numbers = para.numbers          # robo运动次数
 DELTA_T = para.DELTA_T          # 每次运动时间
@@ -88,9 +88,8 @@ cov_msg = String()
 cov_msg.data = str(list(cov_alg.items())[0])
 cov_pub.publish(cov_msg)
 rospy.spin()
-# 控制机器人运动
-rospy.init_node('client' + str(_id), anonymous=False)
 
+# 控制机器人运动
 vel_pub = rospy.Publisher("/cmd_vel", Twist, queue_size=10)
 # 初始化
 vel_msg = Twist()
@@ -170,44 +169,44 @@ def init():
                 state_alg[type][0,:3] = np.array(init_X[_id])
     
     ######## hardware init starts ##########
-    # 1. 初始化，接受三个话题的数据
-    class TopicSubscriber:
-        def __init__(self,topic_name):
-            # 初始化 ROS 节点
-            rospy.init_node('topic_subscriber', anonymous=True)
-            # 订阅话题
-            self.sub = rospy.Subscriber(topic_name, LinktrackNodeframe2, self.callback)
-            # 存储数据
-            self.data_list = []
-        def callback(self, msg_data,msg_nodes):
-            self.id = msg_data.id
-            self.data_list.append(msg_nodes)
-        def run(self):
-            rate = rospy.Rate(10)  # 10 Hz
-            while not rospy.is_shutdown():
-                rate.sleep()
-    data = []
-    a = TopicSubscriber('LinktrackNodeframe2_0')
-    b = TopicSubscriber('LinktrackNodeframe2_1')
-    c = TopicSubscriber('LinktrackNodeframe2_2')
-    a.run()
-    b.run()
-    c.run()
-    for subscriber in (a,b,c):
-        if subscriber.id == 1:
-            data.append(subscriber)
+    # # 1. 初始化，接受三个话题的数据
+    # class TopicSubscriber:
+    #     def __init__(self,topic_name):
+    #         # 初始化 ROS 节点
+    #         rospy.init_node('topic_subscriber', anonymous=True)
+    #         # 订阅话题
+    #         self.sub = rospy.Subscriber(topic_name, LinktrackNodeframe2, self.callback)
+    #         # 存储数据
+    #         self.data_list = []
+    #     def callback(self, msg_data,msg_nodes):
+    #         self.id = msg_data.id
+    #         self.data_list.append(msg_nodes)
+    #     def run(self):
+    #         rate = rospy.Rate(10)  # 10 Hz
+    #         while not rospy.is_shutdown():
+    #             rate.sleep()
+    # data = []
+    # a = TopicSubscriber('LinktrackNodeframe2_0')
+    # b = TopicSubscriber('LinktrackNodeframe2_1')
+    # c = TopicSubscriber('LinktrackNodeframe2_2')
+    # a.run()
+    # b.run()
+    # c.run()
+    # for subscriber in (a,b,c):
+    #     if subscriber.id == 1:
+    #         data.append(subscriber)
 
 
     ######## Already initialize! ########
     # Register 通过这段代码，机器人能够在ROS系统中同步初始化完成的状态和启动时间，以便它们在后续的操作中能够同步进行
     # start time,定义了一个 ROS 参数名称 /start_time，用于存储程序的启动时间。
     str_start_time = '/start_time'
-    # Bool: if 'broadcast_comm_his_GS' is created by this client, then True 用于表示是否创建了通信历史参数
+    # Bool: if 'broadcast_comm_his_GS' is created by this client, then True 用于表示当前节点是否创建了通信历史参数
     Create_broad = False
-    # Bool: if 'start_time' is created by this client, then True 用于表示是否创建了启动时间参数
+    # Bool: if 'start_time' is created by this client, then True 用于表示是否当前节点创建了启动时间参数
     Create_start_time = False
     # broadcast the communication history and the init information,str_broad 用于存储广播历史的 ROS 参数名
-    # str_broad = '/broadcast_comm_his_GS'
+    str_broad = '/broadcast_comm_his_GS'
     if not rospy.has_param(str_broad):
         # 'broadcast_comm_his_GS' not be established in the Parameter Server
         broadcast_comm_his_GS = [0 for r2 in range(NUM_ROBOTS*NUM_ROBOTS)]
