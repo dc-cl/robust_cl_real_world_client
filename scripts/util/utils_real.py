@@ -43,8 +43,9 @@ if -1 in types:
     alg_count -= 1
 
 # Lock of 'v_all' and 'v_count;Lock of 'state_alg', 'cov_alg' and *_count
-v_all_lock = threading.lock()
-state_lock = threading.lock()
+v_all_lock = threading.Lock()
+state_lock = threading.Lock()
+
 
 # int, index about where velocity updates 表示最新的速度数据的索引 v_count+1即为一共有多少个速度 保持最新
 v_count = -1
@@ -319,7 +320,7 @@ def time_propagation():
                 state_cond.notify_all()
 
 
-mea_lock = threading.lock()
+mea_lock = threading.Lock()
 mea_rela_all = np.zeros((numbers, NUM_ROBOTS, 1)) # 只有一个距离
 mea_count = 0 # 最新的测量数据的索引，保持最新 下标对应时刻的下标，所以从0开始
 
