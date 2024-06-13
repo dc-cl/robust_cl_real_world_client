@@ -29,6 +29,7 @@ types = para.types              # 算法种类
 init_X = para.init_X            # robo初始位置
 init_v = para.init_v            # robo初始理论输入速度
 np.random.seed(_id)             # 随机种子
+flag = 1
 
 # 式（32）（33）
 SIGMA_V_INPUT, SIGMA_OMEGA_INPUT = para.SIGMA_V_INPUT, para.SIGMA_OMEGA_INPUT

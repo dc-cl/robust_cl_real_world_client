@@ -22,6 +22,9 @@ E_OMEGA = parameters.E_OMEGA
 SIGMA_V2 = parameters.SIGMA_V2
 SIGMA_OMEGA2 = parameters.SIGMA_OMEGA2
 
+RB = parameters.MAESUREMENT_RANGE_BOUND
+BB = parameters.MAESUREMENT_BEARING_BOUND
+
 
 
 def update_para(Q_new, sigma0_omega2_new, sigma_omega2_new):
