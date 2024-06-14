@@ -128,32 +128,32 @@ class Robot_GS_EKF:
         self.P_GS_prediction = self.P_GS.copy()
 
 
-    def measurement_rela(self, cla_trues, measure_noises, measure_bias_whether=[]):
-        '''
-        Each time keeps all the relative measurements(other robots)
-
-        :param: cla_true: list of class "Robot_true"
-            All GroundTruth about robots
-        :param: measure_noises: list of measure_noises
-            Let each algorithm obtain the same observation values
-        :param: measure_bias_whether: list of whether the measurement is biased
-        '''
-        That_true = cla_trues[self._id].X_true.copy()
-
-        # other robots
-        for r in range(self.NUM_ROBOTS):
-            if (r == self._id):
-                continue
-            _range, bearing, X2_ = parameters.measurement(
-                cla_trues[r].X_true, That_true)
-            if _range <= RB and abs(bearing) <= BB:  # self->r
-                self.measuring[r] = True
-                if measure_bias_whether[r]:
-                    self.contain_bias_rela[r] = True
-                self.measure_noise = measure_noises.copy()
-                if (self.flag >= 0):
-                    self.Z[2*r, 0] = _range + measure_noises[r, 0]
-                    #self.Z[2*r+1, 0] = bearing + measure_noises[r, 1]
+    # def measurement_rela(self, cla_trues, measure_noises, measure_bias_whether=[]):
+    #     '''
+    #     Each time keeps all the relative measurements(other robots)
+    #
+    #     :param: cla_true: list of class "Robot_true"
+    #         All GroundTruth about robots
+    #     :param: measure_noises: list of measure_noises
+    #         Let each algorithm obtain the same observation values
+    #     :param: measure_bias_whether: list of whether the measurement is biased
+    #     '''
+    #     That_true = cla_trues[self._id].X_true.copy()
+    #
+    #     # other robots
+    #     for r in range(self.NUM_ROBOTS):
+    #         if (r == self._id):
+    #             continue
+    #         _range, bearing, X2_ = parameters.measurement(
+    #             cla_trues[r].X_true, That_true)
+    #         if _range <= RB and abs(bearing) <= BB:  # self->r
+    #             self.measuring[r] = True
+    #             if measure_bias_whether[r]:
+    #                 self.contain_bias_rela[r] = True
+    #             self.measure_noise = measure_noises.copy()
+    #             if (self.flag >= 0):
+    #                 self.Z[2*r, 0] = _range + measure_noises[r, 0]
+    #                 self.Z[2*r+1, 0] = bearing + measure_noises[r, 1]
 
 
     def rela_meas_correct(self, count, cla_true=[]):
@@ -181,7 +181,7 @@ class Robot_GS_EKF:
 
                 H[1, 3*self._id] = dp[1]/rho2
                 H[1, 3*self._id+1] = -dp[0]/rho2
-                H[1, 3*self._id+2] = -1
+                #H[1, 3*self._id+2] = -1
                 H[1, 3*r] = -H[1, 3*self._id]
                 H[1, 3*r+1] = -H[1, 3*self._id+1]
 
@@ -401,8 +401,8 @@ class Robot_GS_LRHKF(Robot_GS_EKF):
 
             if (self.flag >= 0):
                 H = np.zeros((2, 3*self.NUM_ROBOTS))
-                Z_cal = np.zeros((1, 1))
-                Z_now = np.zeros((1, 1))
+                Z_cal = np.zeros((2, 1))
+                Z_now = np.zeros((2, 1))
 
             gamma = parameters.rot_mat_2d(self.X_GS[3*self._id+2, 0])
             dp = self.X_GS[3*r:3*r+3] - self.X_GS[3*self._id:3*self._id+3]
@@ -417,13 +417,13 @@ class Robot_GS_LRHKF(Robot_GS_EKF):
 
                 H[1, 3*self._id] = dp[1]/rho2
                 H[1, 3*self._id+1] = -dp[0]/rho2
-                H[1, 3*self._id+2] = -1
+                #H[1, 3*self._id+2] = -1
                 H[1, 3*r] = -H[1, 3*self._id]
                 H[1, 3*r+1] = -H[1, 3*self._id+1]
 
                 Z_cal[0, 0] = rho
-                Z_cal[1, 0] = atan2(dp[1], dp[0]) - self.X_GS[3*self._id+2, 0]
-                Z_now = self.Z[2*r:2*r+2, :]
+                #Z_cal[1, 0] = atan2(dp[1], dp[0]) - self.X_GS[3*self._id+2, 0]
+                Z_now = self.Z[2*r:2*r+1, :]
 
                 R2 = R_0**2
 
