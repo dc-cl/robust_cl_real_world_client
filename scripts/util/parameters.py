@@ -2,7 +2,7 @@ from scipy.spatial.transform import Rotation as Rot
 from math import pi, atan2, sin, cos
 import numpy as np
 
-numbers = 10
+numbers = 1
 DELTA_T = 0.1
 NUM_ROBOTS = 3
 init_X = [[0, 6, 0], [0, 0, 0], [1, -3, 0]]
