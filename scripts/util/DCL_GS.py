@@ -165,25 +165,25 @@ class Robot_GS_EKF:
                 continue
 
             if (self.flag >= 0):
-                H = np.zeros((2, 3*self.NUM_ROBOTS))
-                Z_cal = np.zeros((2, 1))
-                Z_now = self.Z[2*r:2*r+2]
+                H = np.zeros((1, 3*self.NUM_ROBOTS))
+                Z_cal = np.zeros((1, 1))
+                Z_now = self.Z[2*r:2*r+1]
 
             if (self.flag == 0):
                 dp = self.X_GS[3*r:3*r+2] - self.X_GS[3*self._id:3*self._id+2]
                 rho = np.linalg.norm(dp, ord=2)
-                rho2 = rho**2
+                #rho2 = rho**2
 
                 H[0, 3*self._id] = -dp[0]/rho
                 H[0, 3*self._id+1] = -dp[1]/rho
                 H[0, 3*r] = -H[0, 3*self._id]
                 H[0, 3*r+1] = -H[0, 3*self._id+1]
 
-                H[1, 3*self._id] = dp[1]/rho2
-                H[1, 3*self._id+1] = -dp[0]/rho2
+                #H[1, 3*self._id] = dp[1]/rho2
+                #H[1, 3*self._id+1] = -dp[0]/rho2
                 #H[1, 3*self._id+2] = -1
-                H[1, 3*r] = -H[1, 3*self._id]
-                H[1, 3*r+1] = -H[1, 3*self._id+1]
+                #H[1, 3*r] = -H[1, 3*self._id]
+                #H[1, 3*r+1] = -H[1, 3*self._id+1]
 
                 Z_cal[0, 0] = rho
                 #Z_cal[1, 0] = atan2(dp[1], dp[0]) - self.X_GS[3*self._id+2, 0]
@@ -400,9 +400,9 @@ class Robot_GS_LRHKF(Robot_GS_EKF):
                 return
 
             if (self.flag >= 0):
-                H = np.zeros((2, 3*self.NUM_ROBOTS))
-                Z_cal = np.zeros((2, 1))
-                Z_now = np.zeros((2, 1))
+                H = np.zeros((1, 3*self.NUM_ROBOTS))
+                Z_cal = np.zeros((1, 1))
+                Z_now = np.zeros((1, 1))
 
             gamma = parameters.rot_mat_2d(self.X_GS[3*self._id+2, 0])
             dp = self.X_GS[3*r:3*r+3] - self.X_GS[3*self._id:3*self._id+3]
@@ -415,11 +415,11 @@ class Robot_GS_LRHKF(Robot_GS_EKF):
                 H[0, 3*r] = -H[0, 3*self._id]
                 H[0, 3*r+1] = -H[0, 3*self._id+1]
 
-                H[1, 3*self._id] = dp[1]/rho2
-                H[1, 3*self._id+1] = -dp[0]/rho2
-                #H[1, 3*self._id+2] = -1
-                H[1, 3*r] = -H[1, 3*self._id]
-                H[1, 3*r+1] = -H[1, 3*self._id+1]
+                # H[1, 3*self._id] = dp[1]/rho2
+                # H[1, 3*self._id+1] = -dp[0]/rho2
+                # H[1, 3*self._id+2] = -1
+                # H[1, 3*r] = -H[1, 3*self._id]
+                # H[1, 3*r+1] = -H[1, 3*self._id+1]
 
                 Z_cal[0, 0] = rho
                 #Z_cal[1, 0] = atan2(dp[1], dp[0]) - self.X_GS[3*self._id+2, 0]
