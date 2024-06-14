@@ -334,6 +334,7 @@ def time_propagation():
 mea_lock = threading.Lock()
 mea_rela_all = np.zeros((numbers, NUM_ROBOTS, 1)) # 只有一个距离
 mea_count = 0 # 最新的测量数据的索引，保持最新 下标对应时刻的下标，所以从0开始
+data = []
 
 # 实机实验标签间获得的距离代替 data为标签获得的dis
 def Measurement(data):
