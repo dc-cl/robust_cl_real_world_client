@@ -348,10 +348,10 @@ def Measurement():
         else: continue
         id = 0
         with mea_lock:
-            mea_count += 1
-            for m in mea:
-                mea_rela_all[mea_count, id, :] = m
-
+            if mea_count < numbers:
+                mea_count += 1
+                for m in mea:
+                    mea_rela_all[mea_count, id, 0] = m  # 将m赋值给mea_rela_all数组中对应的位置
 # --------------------
 
 
