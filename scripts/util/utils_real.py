@@ -339,6 +339,7 @@ mea_count = 0 # 最新的测量数据的索引，保持最新 下标对应时刻
 def Measurement():
     global mea_rela_all, mea_count
     mea = [1,2] # 标签获得的dis数据
+    start_time = rospy.get_time()
     next_motion_time = start_time + DELTA_T
     while not rospy.is_shutdown():
         measure_time = time.time()
