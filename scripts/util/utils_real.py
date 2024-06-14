@@ -340,7 +340,6 @@ def Measurement():
     global mea_rela_all, mea_count
     mea = [[1],[2],[3]] # 标签获得的dis数据
     start_time = rospy.get_time()
-    id = 0
     next_motion_time = start_time + DELTA_T
     while not rospy.is_shutdown():
         measure_time = time.time()
