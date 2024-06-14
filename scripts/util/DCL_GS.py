@@ -10,6 +10,7 @@ from func_detect_fault import Maha
 Q = parameters.Q
 Q_B = parameters.Q_B  # 用来加噪声的
 DELTA_T = parameters.DELTA_T
+R_0 = 0 # ？
 
 R_1 = parameters.R_1
 R_ALL_1 = parameters.R_ALL
@@ -79,8 +80,8 @@ class Robot_GS_EKF:
         Reset variables about the absolute measurement(landmark)
         '''
         if (self.flag >= 0):
-            self.Z = np.zeros((*self.NUM_ROBOTS, 1))
-            self.Z_true = np.zeros((*self.NUM_ROBOTS, 1))
+            self.Z = np.zeros((self.NUM_ROBOTS, 1))
+            self.Z_true = np.zeros((self.NUM_ROBOTS, 1))
 
         self.contain_bias_rela = np.zeros(self.NUM_ROBOTS, dtype=bool)
 
@@ -152,7 +153,7 @@ class Robot_GS_EKF:
                 self.measure_noise = measure_noises.copy()
                 if (self.flag >= 0):
                     self.Z[2*r, 0] = _range + measure_noises[r, 0]
-                    self.Z[2*r+1, 0] = bearing + measure_noises[r, 1]
+                    #self.Z[2*r+1, 0] = bearing + measure_noises[r, 1]
 
 
     def rela_meas_correct(self, count, cla_true=[]):
@@ -185,7 +186,7 @@ class Robot_GS_EKF:
                 H[1, 3*r+1] = -H[1, 3*self._id+1]
 
                 Z_cal[0, 0] = rho
-                Z_cal[1, 0] = atan2(dp[1], dp[0]) - self.X_GS[3*self._id+2, 0]
+                #Z_cal[1, 0] = atan2(dp[1], dp[0]) - self.X_GS[3*self._id+2, 0]
                 R2 = (R_0)**2
 
             elif (self.flag == 1):
@@ -219,6 +220,7 @@ class Robot_GS_EKF:
 
                 Z_cal = gamma @ dp
 
+            v = Z_now - Z_cal
             if (self.flag == 0 and abs(v[1, 0]) > 4):
                 if (v[1, 0] > 0):
                     v[1, 0] = v[1, 0] - 2*pi
@@ -341,20 +343,20 @@ class Robot_GS_EKF:
 
         self.ANEES_list.append(self.ANEES)
 
-    def draw(self, ax, str_color, str_label):
-        '''
-        Draw the robot in the figure
-
-        :param: ax: the figure
-        :param: str_color: the color of the robot
-        :param: str_label: the label of the robot
-        '''
-        if (self._id == 0):
-            ax.plot(np.array(self.X_list).T[0], np.array(
-                self.X_list).T[1], 'o-', markersize=1, c=str_color, label=str_label)
-        else:
-            ax.plot(np.array(self.X_list).T[0], np.array(
-                self.X_list).T[1], 'o-', markersize=1, c=str_color)
+    # def draw(self, ax, str_color, str_label):
+    #     '''
+    #     Draw the robot in the figure
+    #
+    #     :param: ax: the figure
+    #     :param: str_color: the color of the robot
+    #     :param: str_label: the label of the robot
+    #     '''
+    #     if (self._id == 0):
+    #         ax.plot(np.array(self.X_list).T[0], np.array(
+    #             self.X_list).T[1], 'o-', markersize=1, c=str_color, label=str_label)
+    #     else:
+    #         ax.plot(np.array(self.X_list).T[0], np.array(
+    #             self.X_list).T[1], 'o-', markersize=1, c=str_color)
 
 
 class Robot_GS_LRHKF(Robot_GS_EKF):
