@@ -216,31 +216,35 @@ def init():
 
 
     ######## Already initialize! ########
-    # Register 通过这段代码，机器人能够在ROS系统中同步初始化完成的状态和启动时间，以便它们在后续的操作中能够同步进行
-    # start time,定义了一个 ROS 参数名称 /start_time，用于存储程序的启动时间。
+    # 通过这段代码，机器人能够在ROS系统中同步初始化完成的状态和启动时间，以便它们在后续的操作中能够同步进行
+    # 定义了一个 ROS 参数名称 /start_time，用于存储程序的启动时间。
     str_start_time = '/start_time'
-    # Bool: if 'broadcast_comm_his_GS' is created by this client, then True DEBUG 用于表示当前节点是否创建了通信历史参数
-    Create_broad = False
-    # Bool: if 'start_time' is created by this client, then True DEBUG 用于表示是否当前节点创建了启动时间参数
+    # 用于判断当前节点是否创建了通信历史参数
+    # Create_broad = False
+    # 用于判断当前节点是否创建了启动时间参数
     Create_start_time = False
-    # broadcast the communication history and the init information,str_broad 用于存储广播历史的 ROS 参数名
+    # 用于存储广播历史的 ROS 参数名
     str_broad = '/broadcast_comm_his_GS'
     if not rospy.has_param(str_broad):
-        # 'broadcast_comm_his_GS' not be established in the Parameter Server
+        # 如果不存在，表示该参数未在参数服务器中创建
         broadcast_comm_his_GS = [0 for r2 in range(NUM_ROBOTS*NUM_ROBOTS)]
         # 将当前客户端的通信次数标记为 1
         broadcast_comm_his_GS[(NUM_ROBOTS + 1)*_id] = 1 # NUM_ROBOTS*_id+_id reshape成矩阵，相当于跟自身的通信次数，以此判断是否初始化成功
         rospy.set_param(str_broad, broadcast_comm_his_GS)
-        Create_broad = True
+        # 将Create_broad标记为True，表示已创建通信历史参数
+        # Create_broad = True
 
     # if not Create_broad:
     else:
-        # 'broadcast_comm_his_GS' has been established, need to update
-        # 首先等待 str_broad_lock 参数不存在,然后将其设置为 True。这个锁是为了防止多个客户端同时更新 broadcast_comm_his_GS 参数
+        # broadcast_comm_his_GS参数已被建立
+        # 首先检查是否有其他节点在更新 'broadcast_comm_his_GS' 参数，有则等待，没有参数锁存在，则新建参数锁，并将其设置为True
+        # 使用参数锁机制确保同步,防止多个客户端同时更新 broadcast_comm_his_GS 参数
         while rospy.has_param(str_broad_lock):
             rospy.sleep(0.1)
-        else: rospy.set_param(str_broad_lock, True)
+        rospy.set_param(str_broad_lock, True)
+        # 获取 'broadcast_comm_his_GS' 的值
         broadcast_comm_his_GS = rospy.get_param(str_broad)
+
         # 将当前客户端的通信次数标记为 1,所以最初将state_count = [0, 0, -1]的通信设置为-1，就是为了在此加入一个初始化
         broadcast_comm_his_GS[(NUM_ROBOTS + 1)*_id] = 1 # 同上
         # 遍历 broadcast_comm_his_GS 列表,检查是否所有机器人的通信次数都大于 0,表示所有机器人都已初始化完成
@@ -260,7 +264,7 @@ def init():
             # Not all robots have initialized
             rospy.sleep(0.1)
         
-        start_time = rospy.get_param(str_start_time)
+        # start_time = rospy.get_param(str_start_time)
 # ---------------------------------
 
 # TODO liuyh 更新代码 控制机器人运动
