@@ -176,7 +176,7 @@ def init():
                 state_alg[type] = np.zeros((numbers, 3*NUM_ROBOTS))
                 cov_alg[type] = np.zeros((numbers, 3*NUM_ROBOTS, 3*NUM_ROBOTS))
                 cov_alg[type][0] = algs_motion[type].P_GS.copy()
-                state_alg[type][0,:3*NUM_ROBOTS] = np.array(init_X)
+                state_alg[type][0,:3*NUM_ROBOTS] = np.array(np.reshape(init_X,(1,9)))
             else:
                 state_alg[type] = np.zeros((numbers, 3))
                 cov_alg[type] = np.zeros((numbers, 3, 3))
