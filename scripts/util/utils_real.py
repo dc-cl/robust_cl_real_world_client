@@ -418,7 +418,7 @@ def Comm_send():
     comm_times = 1
     comm_interval = DELTA_T * COMM_RATE
     comm_complete = False
-    
+    start_time = rospy.get_time()
     pub = rospy.Publisher('comm', Float64MultiArray, queue_size=10) # TODO 不同机器人发布和接收不同话题
     while not rospy.is_shutdown():
         curr_comm_times = time.time() - start_time
