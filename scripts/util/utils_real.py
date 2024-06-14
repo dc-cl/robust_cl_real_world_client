@@ -338,7 +338,7 @@ mea_count = 0 # 最新的测量数据的索引，保持最新 下标对应时刻
 # 实机实验标签间获得的距离代替 data为标签获得的dis
 def Measurement():
     global mea_rela_all, mea_count
-    mea = [[1],[2],[3]] # 标签获得的dis数据
+    mea = [1] # 标签获得的dis数据
     start_time = rospy.get_time()
     next_motion_time = start_time + DELTA_T
     while not rospy.is_shutdown():
@@ -350,7 +350,7 @@ def Measurement():
         with mea_lock:
             if mea_count < numbers:
                 mea_count += 1
-                for m in mea:
+                for m in range(10):
                     mea_rela_all[mea_count, id, :] = m  # 将m赋值给mea_rela_all数组中对应的位置
 # --------------------
 
