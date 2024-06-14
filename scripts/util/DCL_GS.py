@@ -10,7 +10,7 @@ from func_detect_fault import Maha
 Q = parameters.Q
 Q_B = parameters.Q_B  # 用来加噪声的
 DELTA_T = parameters.DELTA_T
-R_0 = 0 # ？
+R_0 = parameters.R_0
 
 R_1 = parameters.R_1
 R_ALL_1 = parameters.R_ALL
