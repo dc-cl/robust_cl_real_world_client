@@ -168,29 +168,29 @@ class Robot_true:
     def storage(self):
         self.X_true_list.append(self.X_true.tolist())
 
-    def plot_shape(self, ax):
-        '''
-        Draw the shape of the robot in the figure
-
-        :param: ax: the figure
-        '''
-        x = np.array([.2, .4, .2, -.2, -.2, .2])*2
-        y = np.array([.1, 0, -.1, -.1, .1, .1])*2
-        fx = parameters.rot_mat_2d(self.X_true[2])[
-            0:2][0:2].T @ (np.array([x, y]))
-        px = np.array(fx[0, :] + self.X_true[0]).flatten()
-        py = np.array(fx[1, :] + self.X_true[1]).flatten()
-        ax.plot(px, py, '-', c='k')
-
-    def draw(self, ax):
-        '''
-        Draw the robot in the figure
-
-        :param: ax: the figure
-        '''
-        if (self._id == 0):
-            ax.plot(np.array(self.X_true_list).T[0], np.array(
-                self.X_true_list).T[1], 'o-', markersize=2, c='k', label='GroundTruth')
-        else:
-            ax.plot(np.array(self.X_true_list).T[0], np.array(
-                self.X_true_list).T[1], 'o-', markersize=2, c='k')
+    # def plot_shape(self, ax):
+    #     '''
+    #     Draw the shape of the robot in the figure
+    #
+    #     :param: ax: the figure
+    #     '''
+    #     x = np.array([.2, .4, .2, -.2, -.2, .2])*2
+    #     y = np.array([.1, 0, -.1, -.1, .1, .1])*2
+    #     fx = parameters.rot_mat_2d(self.X_true[2])[
+    #         0:2][0:2].T @ (np.array([x, y]))
+    #     px = np.array(fx[0, :] + self.X_true[0]).flatten()
+    #     py = np.array(fx[1, :] + self.X_true[1]).flatten()
+    #     ax.plot(px, py, '-', c='k')
+    #
+    # def draw(self, ax):
+    #     '''
+    #     Draw the robot in the figure
+    #
+    #     :param: ax: the figure
+    #     '''
+    #     if (self._id == 0):
+    #         ax.plot(np.array(self.X_true_list).T[0], np.array(
+    #             self.X_true_list).T[1], 'o-', markersize=2, c='k', label='GroundTruth')
+    #     else:
+    #         ax.plot(np.array(self.X_true_list).T[0], np.array(
+    #             self.X_true_list).T[1], 'o-', markersize=2, c='k')
