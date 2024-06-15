@@ -12,11 +12,6 @@ import parameters as para
 from DR import Robot
 from DCL_GS import Robot_GS_LRHKF
 from nlink_parser.msg import LinktrackNodeframe2
-from visualization_msgs.msg import Marker
-from geometry_msgs.msg import Point
-from math import pi
-# import matplotlib.pyplot as plt
-# import scienceplot
 
 #_id = rospy.get_param('~id', 0) # id
 _id = 0
@@ -555,73 +550,6 @@ def Comm_recv_callback(recv):
 def Comm_recv():
     rospy.Subscriber('comm', Float64MultiArray, Comm_recv_callback)
     rospy.spin()
-
-
-# color_r = [1.0, ]
-# color_g = [0.0, ]
-# color_b = [0.0, ]
-
-# count = 0
-# markers = {}
-# for typ in types:
-#     markers[typ] = Marker()
-#     # marker.header.frame_id = "base_link"  # Set the frame ID
-#     # marker.header.stamp = rospy.Time.now()
-#     markers[typ].type = Marker.POINTS
-#     markers[typ].action = Marker.ADD
-#     markers[typ].pose.orientation.w = 1.0
-#     markers[typ].scale.x = 0.1  # Point size
-#     markers[typ].scale.y = 0.1
-#     markers[typ].color.r = 1.0  # Red color
-#     markers[typ].color.a = 1.0  # Full opacity
-
-#     count += 1
-
-# def Send2rviz():
-#     marker_publisher = {}
-#     for typ in types:
-#         marker_publisher[typ] = rospy.Publisher(str(_id) + 'tra' + str(type), Marker, queue_size=10)
-#     # time, time_max, mea, mea_max
-#     state_count_local = [-1, 0]
-#     while not rospy.is_shutdown():
-#         with state_lock:
-#             if back_need < state_count_local[1]: state_count_local[1] = back_need
-#             if state_count[0] > state_count_local[0]:
-#                 while state_count_local[0] < state_count[0]:
-#                     state_count_local[0] += 1
-#                     for typ in types:
-#                         point = Point()
-#                         if typ >= 20:
-#                             point.x = state_alg[typ][state_count_local[0], 3*_id+0]
-#                             point.y = state_alg[typ][state_count_local[0], 3*_id+1]
-#                             point.z = state_alg[typ][state_count_local[0], 3*_id+2]
-#                         else:
-#                             point.x = state_alg[typ][state_count_local[0], 0]
-#                             point.y = state_alg[typ][state_count_local[0], 1]
-#                             point.z = state_alg[typ][state_count_local[0], 2]
-
-#                         markers[typ].points.append(point)
-#                         markers[typ].header.frame_id = state_count_local[0]
-#                         markers[typ].header.stamp = start_time + DELTA_T*state_count_local[0]
-
-#             elif state_count[1] > state_count_local[1]:
-#                 while state_count_local[1] < state_count[1]:
-#                     state_count_local[1] += 1
-#                     for typ in types:
-#                         point = Point()
-#                         if typ >= 20:
-#                             point.x = state_alg[typ][state_count_local[0], 3*_id+0]
-#                             point.y = state_alg[typ][state_count_local[0], 3*_id+1]
-#                             point.z = state_alg[typ][state_count_local[0], 3*_id+2]
-#                         else:
-#                             point.x = state_alg[typ][state_count_local[0], 0]
-#                             point.y = state_alg[typ][state_count_local[0], 1]
-#                             point.z = state_alg[typ][state_count_local[0], 2]
-
-#                         markers[typ].points[state_count_local[1]] = point.copy()
-
-#         for typ in types:
-#             marker_publisher[typ].publish(markers[typ])
 
 
 if __name__ == '__main__':
