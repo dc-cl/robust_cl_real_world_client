@@ -351,7 +351,7 @@ def Measurement():
         with mea_lock:
             if mea_count < numbers:
                 mea_count += 1
-                for m_idx, m in enumerate(mea):
+                for m in mea:
                     mea_rela_all[mea_count-1 , id, 0] = m  # 将m赋值给mea_rela_all数组中对应的位置
 # --------------------
 
