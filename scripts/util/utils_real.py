@@ -76,7 +76,7 @@ str_broad = '/broadcast_comm_his_GS'
 # A lock about 'broadcast_comm_his_GS',定义一个字符串 str_broad_lock,用于存储广播历史锁的 ROS 参数名
 str_broad_lock = '/broadcast_lock'
 
-# 初始化 start_time 为 None,用于存储所有机器人启动的时间
+# 初始化 start_time 为 None,用于存储所有机器人启动的时间 ？
 start_time = None
 
 # 初始化ros节点，发布话题，话题中包含两个字典state_alg = {}、cov_alg = {}
@@ -121,6 +121,28 @@ rospy.init_node('client'+str(_id), anonymous=False)
 #     vel_msg.angular.z = 0  # No Angular velocity
 #     vel_pub.publish(vel_msg)
 #     rate.sleep()
+
+# 用于订阅LinktrackNodeframe2的类
+class TopicSubscriber:
+    def __init__(self, topic_name):
+        # 初始化 ROS 节点
+        rospy.init_node('topic_subscriber', anonymous=True)
+        # 订阅话题
+        self.sub = rospy.Subscriber(topic_name, LinktrackNodeframe2, self.callback)
+        # 存储数据
+        self.data_list = []
+
+    def callback(self, msg_data):
+        # self.id = msg_data.id
+        # 遍历 nodes 数组并获取 dis 数据
+        for node in msg_data.nodes:
+            dis_data = node.dis
+            self.dis_list.append(dis_data)  # 存储每个 node 的 dis 数据
+
+    def run(self):
+        rate = rospy.Rate(10)  # 10 Hz
+        while not rospy.is_shutdown():
+            rate.sleep()
 
 def init():
     '''
@@ -178,25 +200,7 @@ def init():
                 state_alg[type][0,:3] = np.array(init_X[_id])
 
     ######## hardware init starts ##########
-     # 1. 初始化，接受三个话题的数据
-    class TopicSubscriber:
-        def __init__(self,topic_name):
-            # 初始化 ROS 节点
-            rospy.init_node('topic_subscriber', anonymous=True)
-            # 订阅话题
-            self.sub = rospy.Subscriber(topic_name, LinktrackNodeframe2, self.callback)
-            # 存储数据
-            self.data_list = []
-        def callback(self, msg_data):
-            # self.id = msg_data.id
-            # 遍历 nodes 数组并获取 dis 数据
-            for node in msg_data.nodes:
-                dis_data = node.dis
-                self.dis_list.append(dis_data)  # 存储每个 node 的 dis 数据
-        def run(self):
-            rate = rospy.Rate(10)  # 10 Hz
-            while not rospy.is_shutdown():
-                rate.sleep()
+    # 1. 初始化，接受三个话题的数据
     # data = []
     # a = TopicSubscriber('LinktrackNodeframe2_0')
     # b = TopicSubscriber('LinktrackNodeframe2_1')
@@ -257,7 +261,6 @@ def init():
         while rospy.has_param(str_start_time):
             # Not all robots have initialized
             rospy.sleep(0.1)
-
         # start_time = rospy.get_param(str_start_time)
 # ---------------------------------
 
