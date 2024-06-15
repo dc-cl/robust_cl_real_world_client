@@ -630,7 +630,6 @@ if __name__ == '__main__':
 
     thread_motion = threading.Thread(target=motion)
     thread_motion.start()
-    data = []
     thread_meas = threading.Thread(target=Measurement)
     thread_meas.start()
 
@@ -646,7 +645,7 @@ if __name__ == '__main__':
     thread_comm_recv = threading.Thread(target=Comm_recv)
     thread_comm_recv.start()
 
-    while(rospy.is_shutdown()):
+    while(not rospy.is_shutdown()):
         # TODO thread.join
         thread_motion.join()
         thread_meas.join()
