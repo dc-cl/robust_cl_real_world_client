@@ -4,20 +4,19 @@ sys.path.append('../')
 from pathlib import Path
 
 import numpy as np
-from math import pi
 import time
 import rospy
 import threading
 from std_msgs.msg import Float64MultiArray
-from visualization_msgs.msg import Marker
-from geometry_msgs.msg import Point
 import parameters as para
-# import matplotlib.pyplot as plt
-# import scienceplots
 from DR import Robot
 from DCL_GS import Robot_GS_LRHKF
 from nlink_parser.msg import LinktrackNodeframe2
-
+from visualization_msgs.msg import Marker
+from geometry_msgs.msg import Point
+from math import pi
+# import matplotlib.pyplot as plt
+# import scienceplot
 
 #_id = rospy.get_param('~id', 0) # id
 _id = 0
@@ -153,7 +152,7 @@ def init():
     global start_time, state_alg, cov_alg, algs_motion, algs_meas, algs_comm
 
     meas_bia_prob, comm_fail_prob = para.meas_bia_prob, para.comm_fail_prob
-    print(f"meas_bia_prob = {meas_bia_prob}, comm_fail_prob = {comm_fail_prob}")
+    # print(f"meas_bia_prob = {meas_bia_prob}, comm_fail_prob = {comm_fail_prob}")
 
     n2 = len(types)  # the number of algorithms
     # Initialize
