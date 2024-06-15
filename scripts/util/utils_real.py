@@ -346,12 +346,12 @@ def Measurement():
         if measure_time >= next_motion_time:
             next_motion_time += DELTA_T
         else: continue
-        # id = 0
-        # with mea_lock:
-        #     if mea_count < numbers:
-        #         mea_count += 1
-        #         for m in range(10):
-        #             mea_rela_all[mea_count, id, :] = m
+         id = 0
+         with mea_lock:
+             if mea_count < numbers:
+                 mea_count += 1
+                 for m in range(10):
+                     mea_rela_all[mea_count, id, :] = m
 # --------------------
 
 
