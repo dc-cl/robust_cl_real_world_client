@@ -203,10 +203,10 @@ def init():
             while not rospy.is_shutdown():
                 rate.sleep()
     # data = []
-    a = TopicSubscriber('LinktrackNodeframe2_0')
+    # a = TopicSubscriber('LinktrackNodeframe2_0')
     # b = TopicSubscriber('LinktrackNodeframe2_1')
     # c = TopicSubscriber('LinktrackNodeframe2_2')
-    a.run()
+    # a.run()
     # b.run()
     # c.run()
     # for subscriber in (a,b,c):
