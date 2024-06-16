@@ -98,7 +98,7 @@ class TopicSubscriber:
         rate = rospy.Rate(10)  # 10 Hz
         while not rospy.is_shutdown():
             rate.sleep()
-a = TopicSubscriber('LinktrackNodeframe2_0')
+a = TopicSubscriber(_id,'LinktrackNodeframe2_0')
 a.run()
 
 # TODO 是否保留
