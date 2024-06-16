@@ -265,10 +265,12 @@ def init():
         # start_time = rospy.get_param(str_start_time)
 # ---------------------------------
 
+str_start_time = '/start_time'
 # TODO liuyh 更新代码 控制机器人运动
 def motion():
     global v_all, v_count, next_motion_time
     delay = 0.1
+    start_time = rospy.get_param(str_start_time)
     while start_time is None:
         # 所有机器人还没初始化完成
         rospy.sleep(0.1)
@@ -289,10 +291,10 @@ def motion():
                 vel_msg = Twist()
                 rate = rospy.Rate(30)
                 while not rospy.is_shutdown():
-                        start_time = rospy.get_time()
-                        if (rospy.get_time()-start_time) <= 1:
+                        start = rospy.get_time()
+                        if (rospy.get_time()-start) <= 1:
                             vel_msg.angular.z = v_all[v_count][1]  # Forward velocity
-                        if (rospy.get_time()-start_time) <= 2:
+                        if (rospy.get_time()-start) <= 2:
                             vel_msg.linear.x = v_all[v_count][0]
                         vel_pub.publish(vel_msg)
                         rate.sleep()
