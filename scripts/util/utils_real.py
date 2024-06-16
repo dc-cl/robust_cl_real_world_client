@@ -264,7 +264,7 @@ def init():
 str_start_time = '/start_time'
 # TODO liuyh 更新代码 控制机器人运动
 def motion():
-    global v_all, v_count, next_motion_time
+    global v_all, v_count, next_motion_time, start_time
     delay = 0.1
     while start_time is None:
         # 所有机器人还没初始化完成
