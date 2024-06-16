@@ -77,7 +77,7 @@ str_broad_lock = '/broadcast_lock'
 start_time = None
 
 # 初始化ros节点，发布话题，话题中包含两个字典state_alg = {}、cov_alg = {}
-# rospy.init_node('client'+str(_id), anonymous=False)
+rospy.init_node('client'+str(_id), anonymous=False)
 
 # TODO 是否保留
 # 创建 ROS 发布者
@@ -141,8 +141,6 @@ class TopicSubscriber:
         while not rospy.is_shutdown():
             rate.sleep()
     # 订阅话题获取数据
-a = TopicSubscriber(_id,'LinktrackNodeframe2_0')
-a.run()
 
 def init():
     '''
@@ -354,7 +352,7 @@ mea_count = 0 # 最新的测量数据的索引，保持最新 下标对应时刻
 # 实机实验标签间获得的距离代替 data为标签获得的dis
 def Measurement():
     global mea_rela_all, mea_count
-    mea = a.dis_list  # 标签获得的dis数据
+    mea = [1]  # 标签获得的dis数据
     start_time = rospy.get_time()
     next_motion_time = start_time + DELTA_T
     while not rospy.is_shutdown():
