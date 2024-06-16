@@ -51,16 +51,15 @@ state_lock = threading.Lock()
 
 # int, index about where velocity updates 表示最新的速度数据的索引 v_count+1即为一共有多少个速度 保持最新
 v_count = -1
-
-measure_count = 0               # 跟踪测量次数
-v_all = np.zeros((numbers, 2))  # 存储每个robo的速度数据
+v_all = np.zeros((numbers, 2))  # 存储单个robo的速度数据
 
 # dict, list all the states updated by algorithms
 state_alg = {}
 cov_alg = {}
-
 # motion_count, meas_count, comm_count = 0, 0, 0,用于跟踪 motion、meas 和 comm 三种操作的进度
 state_count = [0, 0, -1]
+# class of algorithms
+algs_motion, algs_meas, algs_comm = {}, {}, {}
 
 # int: After comm: index before 'back_need' should reupdate,用于标记在通信后需要重新更新的状态索引
 back_need = -1
@@ -69,15 +68,12 @@ back_need = -1
 state_cond = threading.Condition(lock=state_lock)
 
 
-# class of algorithms
-algs_motion, algs_meas, algs_comm = {}, {}, {}
-
 # broadcast the communication history and the init information,定义一个字符串 str_broad,用于存储广播历史的 ROS 参数名
 str_broad = '/broadcast_comm_his_GS'
 # A lock about 'broadcast_comm_his_GS',定义一个字符串 str_broad_lock,用于存储广播历史锁的 ROS 参数名
 str_broad_lock = '/broadcast_lock'
 
-# 初始化 start_time 为 None,用于存储所有机器人启动的时间 ？
+# 初始化 start_time 为 None,用于存储所有机器人启动的时间
 start_time = None
 
 # 初始化ros节点，发布话题，话题中包含两个字典state_alg = {}、cov_alg = {}
@@ -134,11 +130,11 @@ class TopicSubscriber:
         self.dis_list = []
 
     def callback(self, msg_data):
+        dis_data = msg_data.nodes.dis
+        self.dis_list.append(dis_data)  # 存储 node 的 dis 数据
         # self.id = msg_data.id
         # 遍历 nodes 数组并获取 dis 数据  LinktrackNode2[] nodes
         # for node in msg_data.nodes:
-            dis_data = msg_data.nodes.dis
-            self.dis_list.append(dis_data)  # 存储 node 的 dis 数据
 
     def run(self):
         rate = rospy.Rate(10)  # 10 Hz
