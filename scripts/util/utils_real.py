@@ -326,14 +326,11 @@ def time_propagation():
             with state_lock:
                 for type in types:
                     if state_count[1] >= v_count_local:
-                        # with condition:
-                        #     measurement_paused = True
-                            #condition.notify_all()
                         # time_propagation, the belief after measurement update can be obtained
                         # index of belief in algs_motion equals to v_count_local
-                        # if type >= 20:
-                        #     algs_motion[type].X_GS[:,0] = state_alg[type][v_count_local].copy()
-                        #     algs_motion[type].P_GS = cov_alg[type][v_count_local].copy()
+                        if type >= 20:
+                            algs_motion[type].X_GS[:,0] = state_alg[type][v_count_local].copy()
+                            algs_motion[type].P_GS = cov_alg[type][v_count_local].copy()
                         # # TODO ()other type of alg
                     algs_motion[type].motion(v = v_update[0], omega = v_update[1])
 
