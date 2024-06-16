@@ -266,10 +266,10 @@ str_start_time = '/start_time'
 def motion():
     global v_all, v_count, next_motion_time
     delay = 0.1
-    start_time = rospy.get_param(str_start_time)
     while start_time is None:
         # 所有机器人还没初始化完成
         rospy.sleep(0.1)
+    start_time = rospy.get_param(str_start_time)
 
     next_motion_time = start_time
     final_time = start_time + total_time
