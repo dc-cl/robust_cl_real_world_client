@@ -11,6 +11,7 @@ from std_msgs.msg import Float64MultiArray
 import parameters as para
 from DR import Robot
 from DCL_GS import Robot_GS_LRHKF
+from geometry_msgs.msg import Twist
 from nlink_parser.msg import LinktrackNodeframe2
 
 #_id = rospy.get_param('~id', 0) # id
@@ -129,15 +130,15 @@ class TopicSubscriber:
         rospy.init_node('topic_subscriber', anonymous=True)
         # 订阅话题
         self.sub = rospy.Subscriber(topic_name, LinktrackNodeframe2, self.callback)
-        # 存储数据
-        self.data_list = []
+        # 存储dis数据
+        self.dis_list = []
 
     def callback(self, msg_data):
         # self.id = msg_data.id
-        # 遍历 nodes 数组并获取 dis 数据
-        for node in msg_data.nodes:
-            dis_data = node.dis
-            self.dis_list.append(dis_data)  # 存储每个 node 的 dis 数据
+        # 遍历 nodes 数组并获取 dis 数据  LinktrackNode2[] nodes
+        # for node in msg_data.nodes:
+            dis_data = msg_data.nodes.dis
+            self.dis_list.append(dis_data)  # 存储 node 的 dis 数据
 
     def run(self):
         rate = rospy.Rate(10)  # 10 Hz
@@ -283,11 +284,30 @@ def motion():
                 # v_count初始为-1,v_all里提前存储每次运动的速度
                 v_count += 1
                 v_all[v_count] = velocity
+                # 控制机器人运动
+                vel_pub = rospy.Publisher("/cmd_vel", Twist, queue_size=10)
+                vel_msg = Twist()
+                rate = rospy.Rate(30)
+                while not rospy.is_shutdown():
+                        start_time = rospy.get_time()
+                        if (rospy.get_time()-start_time) <= 1:
+                            vel_msg.angular.z = v_all[v_count][1]  # Forward velocity
+                        if (rospy.get_time()-start_time) <= 2:
+                            vel_msg.linear.x = v_all[v_count][0]
+                        vel_pub.publish(vel_msg)
+                        rate.sleep()
+                        # 停止运动后机器人不动
+                        vel_msg.linear.x = 0  # No linear velocity
+                        vel_msg.angular.z = 0  # No Angular velocity
+                        vel_pub.publish(vel_msg)
+                        rate.sleep()
 
             velocity = [np.random.randn()*sigma_v_input_ + E_v_, np.random.randn()*sigma_omega_input_ + E_omega_]
             next_motion_time += DELTA_T
 # -------------------
 
+# condition = threading.Condition()
+# measurement_paused = False
 
 # TODO 当观测,通讯完成后,可能有些滞后,需要重新update
 def time_propagation():
@@ -297,21 +317,22 @@ def time_propagation():
         with state_lock:
             v_count_local = state_count[0] # 获取当前运动的更新到了哪一步
         with v_all_lock:
-            if v_count > v_count_local:
+            if v_count > v_count_local:                # v_count表示存储的速度次数
                 v_update = v_all[v_count_local].copy() # 当前状态更新需要的速度
 
         if v_update is not None:
             with state_lock:
                 for type in types:
-                    if state_count[1] >= v_count_local: # TODO WHY
+                    if state_count[1] >= v_count_local:
+                        # with condition:
+                        #     measurement_paused = True
+                            #condition.notify_all()
                         # time_propagation, the belief after measurement update can be obtained
                         # index of belief in algs_motion equals to v_count_local
-                        if type >= 20:
-                            algs_motion[type].X_GS[:,0] = state_alg[type][v_count_local].copy()
-                            algs_motion[type].P_GS = cov_alg[type][v_count_local].copy()
-                        # TODO ()other type of alg
-
-                    # algs_motion[type].motion(v = v_all[v_count_local, 0], omega = v_all[v_count_local, 1]) 这个不对 v_all是全局变量
+                        # if type >= 20:
+                        #     algs_motion[type].X_GS[:,0] = state_alg[type][v_count_local].copy()
+                        #     algs_motion[type].P_GS = cov_alg[type][v_count_local].copy()
+                        # # TODO ()other type of alg
                     algs_motion[type].motion(v = v_update[0], omega = v_update[1])
 
                     # Why v_count_local + 1? because this is prediction
@@ -335,10 +356,16 @@ mea_count = 0 # 最新的测量数据的索引，保持最新 下标对应时刻
 # 实机实验标签间获得的距离代替 data为标签获得的dis
 def Measurement():
     global mea_rela_all, mea_count
-    mea = [1]  # 标签获得的dis数据
+    # 订阅话题获取数据
+    a = TopicSubscriber('LinktrackNodeframe2_0')
+    a.run()
+    mea = a.dis_list # 标签获得的dis数据
     start_time = rospy.get_time()
     next_motion_time = start_time + DELTA_T
     while not rospy.is_shutdown():
+        with state_cond:
+            if state_count[1] >= state_count[0]:
+                state_cond.wait()
         measure_time = time.time()
         if measure_time >= next_motion_time:
             next_motion_time += DELTA_T
