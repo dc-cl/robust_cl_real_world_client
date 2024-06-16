@@ -373,12 +373,12 @@ def Measurement():
             next_motion_time += DELTA_T
         else:
             continue
-        id = 0
+        _id = 0
         with mea_lock:
             if mea_count < numbers:
                 mea_count += 1
                 for m in mea:
-                    mea_rela_all[mea_count-1 , id, 0] = m  # 将m赋值给mea_rela_all数组中对应的位置
+                    mea_rela_all[mea_count-1 , _id, 0] = m  # 将m赋值给mea_rela_all数组中对应的位置
 # --------------------
 
 
