@@ -77,7 +77,29 @@ str_broad_lock = '/broadcast_lock'
 start_time = None
 
 # 初始化ros节点，发布话题，话题中包含两个字典state_alg = {}、cov_alg = {}
-rospy.init_node('client'+str(_id), anonymous=False)
+# rospy.init_node('client'+str(_id), anonymous=False)
+class TopicSubscriber:
+    def __init__(self,_id, topic_name):
+        # 初始化 ROS 节点
+        rospy.init_node('client'+str(_id), anonymous=False)
+        # 订阅话题
+        self.sub = rospy.Subscriber(topic_name, LinktrackNodeframe2, self.callback)
+        # 存储dis数据
+        self.dis_list = []
+
+    def callback(self, msg_data):
+        dis_data = msg_data.nodes.dis
+        self.dis_list.append(dis_data)  # 存储 node 的 dis 数据
+        # self.id = msg_data.id
+        # 遍历 nodes 数组并获取 dis 数据  LinktrackNode2[] nodes
+        # for node in msg_data.nodes:
+
+    def run(self):
+        rate = rospy.Rate(10)  # 10 Hz
+        while not rospy.is_shutdown():
+            rate.sleep()
+a = TopicSubscriber('LinktrackNodeframe2_0')
+a.run()
 
 # TODO 是否保留
 # 创建 ROS 发布者
@@ -118,29 +140,6 @@ rospy.init_node('client'+str(_id), anonymous=False)
 #     vel_msg.angular.z = 0  # No Angular velocity
 #     vel_pub.publish(vel_msg)
 #     rate.sleep()
-
-# 用于订阅LinktrackNodeframe2的类
-class TopicSubscriber:
-    def __init__(self,_id, topic_name):
-        # 初始化 ROS 节点
-        rospy.init_node('client'+str(_id), anonymous=False)
-        # 订阅话题
-        self.sub = rospy.Subscriber(topic_name, LinktrackNodeframe2, self.callback)
-        # 存储dis数据
-        self.dis_list = []
-
-    def callback(self, msg_data):
-        dis_data = msg_data.nodes.dis
-        self.dis_list.append(dis_data)  # 存储 node 的 dis 数据
-        # self.id = msg_data.id
-        # 遍历 nodes 数组并获取 dis 数据  LinktrackNode2[] nodes
-        # for node in msg_data.nodes:
-
-    def run(self):
-        rate = rospy.Rate(10)  # 10 Hz
-        while not rospy.is_shutdown():
-            rate.sleep()
-    # 订阅话题获取数据
 
 def init():
     '''
@@ -352,7 +351,7 @@ mea_count = 0 # 最新的测量数据的索引，保持最新 下标对应时刻
 # 实机实验标签间获得的距离代替 data为标签获得的dis
 def Measurement():
     global mea_rela_all, mea_count
-    mea = [1]  # 标签获得的dis数据
+    mea = a.dis_list()  # 标签获得的dis数据
     start_time = rospy.get_time()
     next_motion_time = start_time + DELTA_T
     while not rospy.is_shutdown():
