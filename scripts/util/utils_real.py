@@ -91,7 +91,6 @@ class TopicSubscriber:
         nodes = msg_data.nodes
         for node in nodes:
             self.dis_list.append(node.dis)  # 存储 node 的 dis 数据
-        # self.id = msg_data.id
         # 遍历 nodes 数组并获取 dis 数据  LinktrackNode2[] nodes
         # for node in msg_data.nodes:
 
