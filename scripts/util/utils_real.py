@@ -250,6 +250,7 @@ def init():
             start_time = time.time() + 5
             rospy.set_param(str_start_time, start_time)
             Create_start_time = True
+            print("initial is done")
 
         rospy.set_param(str_broad, broadcast_comm_his_GS)
         rospy.delete_param(str_broad_lock)
@@ -261,10 +262,9 @@ def init():
         # start_time = rospy.get_param(str_start_time)
 # ---------------------------------
 
-str_start_time = '/start_time'
 # TODO liuyh 更新代码 控制机器人运动
 def motion():
-    global v_all, v_count, next_motion_time, start_time
+    global v_all, v_count, next_motion_time, start_time,str_start_time
     delay = 0.1
     while start_time is None:
         # 所有机器人还没初始化完成
