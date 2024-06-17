@@ -38,6 +38,6 @@
     </node>
     <node pkg="robust_cl_real_world_client" type="utils_real.py" name="robot_$(arg id)" output="$(arg output)">
         <remap from="LinktrackNodeframe2_0" to="$(arg new_topic_name1)"/>
-        <param name="id" value="$(arg id)" type="int">
+        <param name="id" value="$(arg id)" type="int"/>
     </node>
 </launch>
