@@ -89,8 +89,7 @@ class TopicSubscriber:
 
     def callback(self, msg_data):
         dis_data = msg_data.nodes.dis
-        self.dis_list = [1]
-        # self.dis_list.append(dis_data)  # 存储 node 的 dis 数据
+        self.dis_list.append(dis_data)  # 存储 node 的 dis 数据
         # self.id = msg_data.id
         # 遍历 nodes 数组并获取 dis 数据  LinktrackNode2[] nodes
         # for node in msg_data.nodes:
