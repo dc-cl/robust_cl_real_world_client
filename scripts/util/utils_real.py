@@ -221,10 +221,13 @@ def init():
     # 用于存储广播历史的 ROS 参数名
     str_broad = '/broadcast_comm_his_GS'
     if not rospy.has_param(str_broad):
+        print("broadcast_comm_his_GS不存在")
         # 如果不存在，表示该参数未在参数服务器中创建
         broadcast_comm_his_GS = [0 for r2 in range(NUM_ROBOTS*NUM_ROBOTS)]
+        print("创建broadcast_comm_his_GS成功")
         # 将当前客户端的通信次数标记为 1
         broadcast_comm_his_GS[(NUM_ROBOTS + 1)*_id] = 1 # NUM_ROBOTS*_id+_id reshape成矩阵，相当于跟自身的通信次数，以此判断是否初始化成功
+        print("将当前客户端的通信次数标记为 1")
         rospy.set_param(str_broad, broadcast_comm_his_GS)
         # 将Create_broad标记为True，表示已创建通信历史参数
         # Create_broad = True
@@ -237,11 +240,13 @@ def init():
         while rospy.has_param(str_broad_lock):
             rospy.sleep(0.1)
         rospy.set_param(str_broad_lock, True)
+        print("没有其他客户更新broadcast_comm_his_GS 参数，换我来")
         # 获取 'broadcast_comm_his_GS' 的值
         broadcast_comm_his_GS = rospy.get_param(str_broad)
 
         # 将当前客户端的通信次数标记为 1,所以最初将state_count = [0, 0, -1]的通信设置为-1，就是为了在此加入一个初始化
         broadcast_comm_his_GS[(NUM_ROBOTS + 1)*_id] = 1 # 同上
+        print("broadcast_comm_his_GS存在，通信标记为1")
         # 遍历 broadcast_comm_his_GS 列表,检查是否所有机器人的通信次数都大于 0,表示所有机器人都已初始化完成
         for r in range(NUM_ROBOTS):
             if broadcast_comm_his_GS[(NUM_ROBOTS + 1)*r] <= 0: break
