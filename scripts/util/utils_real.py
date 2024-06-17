@@ -14,8 +14,8 @@ from DCL_GS import Robot_GS_LRHKF
 from geometry_msgs.msg import Twist
 from nlink_parser.msg import LinktrackNodeframe2
 
-#_id = rospy.get_param('~id', 0) # id
-_id = 0
+_id = rospy.get_param('~id', 0) # id
+# _id = 0
 NUM_ROBOTS = para.NUM_ROBOTS    # robo个数
 numbers = para.numbers          # robo运动次数
 DELTA_T = para.DELTA_T          # 每次运动时间
