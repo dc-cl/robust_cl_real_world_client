@@ -14,8 +14,7 @@ from DCL_GS import Robot_GS_LRHKF
 from geometry_msgs.msg import Twist
 from nlink_parser.msg import LinktrackNodeframe2
 
-_id = rospy.get_param('~id', 0) # id
-# _id = 0
+
 NUM_ROBOTS = para.NUM_ROBOTS    # robo个数
 numbers = para.numbers          # robo运动次数
 DELTA_T = para.DELTA_T          # 每次运动时间
@@ -23,7 +22,6 @@ total_time = numbers * DELTA_T  # 总共运行时间 包含多次运动
 types = para.types              # 算法种类
 init_X = para.init_X            # robo初始位置
 init_v = para.init_v            # robo初始理论输入速度
-np.random.seed(_id)             # 随机种子
 flag = 0
 '''
 flag: int, observation model
@@ -79,9 +77,9 @@ start_time = None
 # 初始化ros节点，发布话题，话题中包含两个字典state_alg = {}、cov_alg = {}
 # rospy.init_node('client'+str(_id), anonymous=False)
 class TopicSubscriber:
-    def __init__(self,_id, topic_name):
+    def __init__(self, topic_name):
         # 初始化 ROS 节点
-        rospy.init_node('client'+str(_id), anonymous=False)
+        rospy.init_node('client', anonymous=False)
         # 订阅话题
         self.sub = rospy.Subscriber(topic_name, LinktrackNodeframe2, self.callback)
         # 存储dis数据
@@ -98,8 +96,11 @@ class TopicSubscriber:
         rate = rospy.Rate(10)  # 10 Hz
         while not rospy.is_shutdown():
             rate.sleep()
-a = TopicSubscriber(_id,'LinktrackNodeframe2_0')
-a.run()
+a = TopicSubscriber('LinktrackNodeframe2_0')
+# a.run()
+_id = rospy.get_param('~id', 0) # id
+# _id = 0
+np.random.seed(_id)             # 随机种子
 
 # TODO 是否保留
 # 创建 ROS 发布者
