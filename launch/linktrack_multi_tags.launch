@@ -36,5 +36,7 @@
         <param name="port_name" value="/dev/ttyCH343USB2" />
         <param name="baud_rate" value="$(arg baud_rate_value)" />
     </node>
-    <node pkg="robust_cl_real_world_client" type="utils_real.py" name="robot_$(arg id)"/>
+    <node pkg="robust_cl_real_world_client" type="utils_real.py" name="robot_$(arg id)">
+        <remap from="LinktrackNodeframe2_0" to="$(arg new_topic_name1)"/>
+    </node>
 </launch>
