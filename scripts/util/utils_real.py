@@ -288,7 +288,6 @@ def motion():
             with v_all_lock:
                 # v_count初始为-1,v_all里提前存储每次运动的速度
                 v_count += 1
-                print(v_count)
                 v_all[v_count, 0] = velocity[0]
                 v_all[v_count, 1] = velocity[1]
                 # 控制机器人运动
@@ -296,6 +295,7 @@ def motion():
                 vel_msg = Twist()
                 rate = rospy.Rate(30)
                 while not rospy.is_shutdown():
+                    # start_time = time.time()
                         start = rospy.get_time()
                         if (rospy.get_time()-start) <= 1:
                             vel_msg.angular.z = v_all[v_count][1]  # Forward velocity
