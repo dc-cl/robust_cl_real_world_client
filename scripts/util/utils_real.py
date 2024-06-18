@@ -292,24 +292,24 @@ def motion():
                 v_count += 1
                 v_all[v_count, 0] = velocity[0]
                 v_all[v_count, 1] = velocity[1]
-                # 控制机器人运动
-                # vel_pub = rospy.Publisher("/cmd_vel", Twist, queue_size=10)
-                # vel_msg = Twist()
-                # rate = rospy.Rate(30)
-                # while not rospy.is_shutdown():
-                #     # start_time = time.time()
-                #         start = rospy.get_time()
-                #         if (rospy.get_time()-start) <= 1:
-                #             vel_msg.angular.z = v_all[v_count][1]  # Forward velocity
-                #         if (rospy.get_time()-start) <= 2:
-                #             vel_msg.linear.x = v_all[v_count][0]
-                #         vel_pub.publish(vel_msg)
-                #         rate.sleep()
-                #         # 停止运动后机器人不动
-                #         vel_msg.linear.x = 0  # No linear velocity
-                #         vel_msg.angular.z = 0  # No Angular velocity
-                #         vel_pub.publish(vel_msg)
-                #         rate.sleep()
+                控制机器人运动
+                vel_pub = rospy.Publisher("/cmd_vel", Twist, queue_size=10)
+                vel_msg = Twist()
+                rate = rospy.Rate(30)
+                while not rospy.is_shutdown():
+                    # start_time = time.time()
+                        start = rospy.get_time()
+                        if (rospy.get_time()-start) <= 1:
+                            vel_msg.angular.z = v_all[v_count][1]  # Forward velocity
+                        if (rospy.get_time()-start) <= 2:
+                            vel_msg.linear.x = v_all[v_count][0]
+                        vel_pub.publish(vel_msg)
+                        rate.sleep()
+                        # 停止运动后机器人不动
+                        vel_msg.linear.x = 0  # No linear velocity
+                        vel_msg.angular.z = 0  # No Angular velocity
+                        vel_pub.publish(vel_msg)
+                        rate.sleep()
 
             velocity = [np.random.randn()*sigma_v_input_ + E_v_, np.random.randn()*sigma_omega_input_ + E_omega_]
             velocity = np.squeeze(velocity)
