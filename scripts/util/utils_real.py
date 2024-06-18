@@ -260,7 +260,7 @@ def init():
             print("initial is done")
 
     rospy.set_param(str_broad, broadcast_comm_his_GS)
-    rospy.delete_param(str_broad_lock)
+    # rospy.delete_param(str_broad_lock)
 
     # if not Create_start_time:
     #     while rospy.has_param(str_start_time):
