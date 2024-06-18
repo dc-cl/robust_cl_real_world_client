@@ -300,9 +300,9 @@ def motion():
                     # start_time = time.time()
                         start = rospy.get_time()
                         if (rospy.get_time()-start) <= 1:
-                            vel_msg.angular.z = v_all[v_count][1]  # Forward velocity
+                            vel_msg.angular.z = v_all[v_count, 1]  # Forward velocity
                         if (rospy.get_time()-start) <= 2:
-                            vel_msg.linear.x = v_all[v_count][0]
+                            vel_msg.linear.x = v_all[v_count, 0]
                         vel_pub.publish(vel_msg)
                         rate.sleep()
                         # 停止运动后机器人不动
