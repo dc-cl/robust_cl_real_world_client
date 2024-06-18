@@ -288,7 +288,7 @@ def motion():
             with v_all_lock:
                 # v_count初始为-1,v_all里提前存储每次运动的速度
                 v_count += 1
-                v_all[v_count,:]= velocity
+                v_all[v_count,:]= np.array(velocity)
                 # 控制机器人运动
                 vel_pub = rospy.Publisher("/cmd_vel", Twist, queue_size=10)
                 vel_msg = Twist()
