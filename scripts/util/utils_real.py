@@ -268,6 +268,7 @@ def init():
     #     # start_time = rospy.get_param(str_start_time)
 # ---------------------------------
 
+str_start_time = '/start_time'
 # TODO liuyh 更新代码 控制机器人运动
 def motion():
     global v_all, v_count, next_motion_time, start_time,str_start_time
