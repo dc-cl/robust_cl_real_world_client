@@ -312,6 +312,7 @@ def motion():
                 #         rate.sleep()
 
             velocity = [np.random.randn()*sigma_v_input_ + E_v_, np.random.randn()*sigma_omega_input_ + E_omega_]
+            velocity = np.squeeze(velocity)
             print(velocity)
             next_motion_time += DELTA_T
 # -------------------
