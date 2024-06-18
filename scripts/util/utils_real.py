@@ -256,7 +256,7 @@ def init():
             # all robots have initialized,
             start_time = time.time() + 5
             rospy.set_param(str_start_time, start_time)
-            Create_start_time = True
+            # Create_start_time = True
             print("initial is done")
 
     rospy.set_param(str_broad, broadcast_comm_his_GS)
