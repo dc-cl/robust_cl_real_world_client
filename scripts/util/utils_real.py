@@ -250,7 +250,7 @@ def init():
     # 遍历 broadcast_comm_his_GS 列表,检查是否所有机器人的通信次数都大于 0,表示所有机器人都已初始化完成
     for r in range(NUM_ROBOTS):
         if broadcast_comm_his_GS[(NUM_ROBOTS + 1)*r] <= 0:
-            time.sleep(1)
+            pass
         else:
             # all robots have initialized,
             start_time = time.time() + 5
