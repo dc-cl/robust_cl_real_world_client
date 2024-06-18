@@ -288,6 +288,7 @@ def motion():
             with v_all_lock:
                 # v_count初始为-1,v_all里提前存储每次运动的速度
                 v_count += 1
+                print(v_count)
                 v_all[v_count, 0] = velocity[0]
                 v_all[v_count, 1] = velocity[1]
                 # 控制机器人运动
