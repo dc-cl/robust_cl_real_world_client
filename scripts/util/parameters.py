@@ -27,7 +27,7 @@ types = [28]
 '''
 
 Q = np.diag(np.tile([.7, .3], NUM_ROBOTS))  # 式（4）sigma_v和sigma_w
-Q_B = 0  # 用于调节噪声
+Q_B = np.diag(np.tile([0, 0], NUM_ROBOTS))   # 用于调节噪声
 R_1 = np.array([0.05, 0.05, (pi / 180)])
 R_ALL = np.diag(np.tile([0.05, 0.05, (pi / 180)], NUM_ROBOTS))  # 量测模型噪声的协方差
 P_INIT = np.diag(np.tile([0.05 ** 2, 0.05 ** 2, (pi / 180) ** 2], NUM_ROBOTS)) # 初始化状态协方差
