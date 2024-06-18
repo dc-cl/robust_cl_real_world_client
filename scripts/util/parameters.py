@@ -3,7 +3,7 @@ from math import pi, atan2, sin, cos
 import numpy as np
 
 numbers = 10
-DELTA_T = 0.1
+DELTA_T = 1
 NUM_ROBOTS = 1
 # init_X = [[0, 6, 0], [0, 0, 0]]
 # init_v = [[.1, .1], [.2, .2]]

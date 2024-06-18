@@ -271,7 +271,7 @@ str_start_time = '/start_time'
 # TODO liuyh 更新代码 控制机器人运动
 def motion():
     global v_all, v_count, next_motion_time, start_time,str_start_time
-    delay = 0.1
+    delay = 1
     start_time = rospy.get_param(str_start_time)
     while start_time is None:
         # 所有机器人还没初始化完成
@@ -284,12 +284,13 @@ def motion():
     print(velocity)
     # np.random.randn()是NumPy库中用于生成服从标准正态分布（均值为0，标准差为1）的随机数的函数
 
-    while next_motion_time < final_time:
+    while next_motion_time < final_time or v_count<10:
         if time.time() + delay >= next_motion_time:
             with v_all_lock:
                 # v_count初始为-1,v_all里提前存储每次运动的速度
                 # v_all[v_count,:] = velocity
                 v_count += 1
+                print(v_count)
                 v_all[v_count, 0] = velocity[0]
                 v_all[v_count, 1] = velocity[1]
                 # 控制机器人运动
