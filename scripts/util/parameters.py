@@ -4,7 +4,7 @@ import numpy as np
 
 numbers = 10
 DELTA_T = 0.1
-NUM_ROBOTS = 3
+NUM_ROBOTS = 2
 init_X = [[0, 6, 0], [0, 0, 0], [1, -3, 0]]
 init_v = [[.1, .1], [.2, .2], [.3, .3]]
 # types为一个数组，不同数字表示不同的算法类型
