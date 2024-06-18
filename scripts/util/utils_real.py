@@ -279,7 +279,7 @@ def motion():
 
     next_motion_time = start_time
     final_time = start_time + total_time
-    velocity = [float(np.random.randn())*sigma_v_input_ + E_v_, float(np.random.randn())*sigma_omega_input_ + E_omega_]
+    velocity = [np.random.randn()*sigma_v_input_ + E_v_, np.random.randn()*sigma_omega_input_ + E_omega_]
     print(velocity)
     # np.random.randn()是NumPy库中用于生成服从标准正态分布（均值为0，标准差为1）的随机数的函数
 
@@ -289,8 +289,8 @@ def motion():
                 # v_count初始为-1,v_all里提前存储每次运动的速度
                 # v_all[v_count,:] = velocity
                 v_count += 1
-                v_all[v_count, 0] = velocity[0]
-                v_all[v_count, 1] = velocity[1]
+                v_all[v_count, 0] = velocity[0][0]
+                v_all[v_count, 1] = velocity[1][1]
                 # 控制机器人运动
                 # vel_pub = rospy.Publisher("/cmd_vel", Twist, queue_size=10)
                 # vel_msg = Twist()
