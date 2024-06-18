@@ -250,7 +250,6 @@ def init():
     # 遍历 broadcast_comm_his_GS 列表,检查是否所有机器人的通信次数都大于 0,表示所有机器人都已初始化完成
     for r in range(NUM_ROBOTS):
         if broadcast_comm_his_GS[(NUM_ROBOTS + 1)*r] <= 0:
-            #break
             time.sleep(1)
         else:
             # all robots have initialized,
@@ -260,7 +259,7 @@ def init():
             print("initial is done")
 
     rospy.set_param(str_broad, broadcast_comm_his_GS)
-    # rospy.delete_param(str_broad_lock)
+    rospy.delete_param(str_broad_lock)
 
     # if not Create_start_time:
     #     while rospy.has_param(str_start_time):
@@ -273,10 +272,10 @@ def init():
 def motion():
     global v_all, v_count, next_motion_time, start_time,str_start_time
     delay = 0.1
+    start_time = rospy.get_param(str_start_time)
     while start_time is None:
         # 所有机器人还没初始化完成
         rospy.sleep(0.1)
-    start_time = rospy.get_param(str_start_time)
 
     next_motion_time = start_time
     final_time = start_time + total_time
