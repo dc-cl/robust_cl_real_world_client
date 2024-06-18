@@ -279,7 +279,7 @@ def motion():
 
     next_motion_time = start_time
     final_time = start_time + total_time
-    velocity = [np.random.randn()*sigma_v_input_ + E_v_, np.random.randn()*sigma_omega_input_ + E_omega_]
+    velocity = [float(np.random.randn())*sigma_v_input_ + E_v_, float(np.random.randn())*sigma_omega_input_ + E_omega_]
     print(velocity)
     # np.random.randn()是NumPy库中用于生成服从标准正态分布（均值为0，标准差为1）的随机数的函数
 
