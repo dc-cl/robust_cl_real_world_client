@@ -3,10 +3,13 @@ from math import pi, atan2, sin, cos
 import numpy as np
 
 numbers = 10
-DELTA_T = 0.1
-NUM_ROBOTS = 3
-init_X = [[0, 6, 0], [0, 0, 0], [1, -3, 0]]
-init_v = [[.1, .1], [.2, .2], [.3, .3]]
+DELTA_T = 1
+NUM_ROBOTS = 1
+# init_X = [[0, 6, 0], [0, 0, 0]]
+# init_v = [[.1, .1], [.2, .2]]
+init_X = [[0, 6, 0]]
+init_v = [[.1, .1]]
+
 # types为一个数组，不同数字表示不同的算法类型
 types = [28]
 '''
@@ -24,7 +27,7 @@ types = [28]
 '''
 
 Q = np.diag(np.tile([.7, .3], NUM_ROBOTS))  # 式（4）sigma_v和sigma_w
-Q_B = 0  # 用于调节噪声
+Q_B = np.zeros(3* NUM_ROBOTS)   # 用于调节噪声
 R_1 = np.array([0.05, 0.05, (pi / 180)])
 R_ALL = np.diag(np.tile([0.05, 0.05, (pi / 180)], NUM_ROBOTS))  # 量测模型噪声的协方差
 P_INIT = np.diag(np.tile([0.05 ** 2, 0.05 ** 2, (pi / 180) ** 2], NUM_ROBOTS)) # 初始化状态协方差

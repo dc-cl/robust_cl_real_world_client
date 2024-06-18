@@ -46,7 +46,6 @@ if -1 in types:
 v_all_lock = threading.Lock()
 state_lock = threading.Lock()
 
-
 # int, index about where velocity updates 表示最新的速度数据的索引 v_count+1即为一共有多少个速度 保持最新
 v_count = -1
 v_all = np.zeros((numbers, 2))  # 存储单个robo的速度数据
@@ -74,7 +73,7 @@ str_broad_lock = '/broadcast_lock'
 # 初始化 start_time 为 None,用于存储所有机器人启动的时间
 start_time = None
 
-# 初始化ros节点，发布话题，话题中包含两个字典state_alg = {}、cov_alg = {}
+
 # rospy.init_node('client'+str(_id), anonymous=False)
 class TopicSubscriber:
     def __init__(self, topic_name):
@@ -190,7 +189,7 @@ def init():
                 state_alg[type] = np.zeros((numbers, 3*NUM_ROBOTS))
                 cov_alg[type] = np.zeros((numbers, 3*NUM_ROBOTS, 3*NUM_ROBOTS))
                 cov_alg[type][0] = algs_motion[type].P_GS.copy()
-                state_alg[type][0,:3*NUM_ROBOTS] = np.array(np.reshape(init_X,(1,9)))
+                state_alg[type][0,:3*NUM_ROBOTS] = np.array(np.reshape(init_X,(1,3*NUM_ROBOTS)))
             else:
                 state_alg[type] = np.zeros((numbers, 3))
                 cov_alg[type] = np.zeros((numbers, 3, 3))
@@ -232,7 +231,6 @@ def init():
         rospy.set_param(str_broad, broadcast_comm_his_GS)
         # 将Create_broad标记为True，表示已创建通信历史参数
         # Create_broad = True
-
     # if not Create_broad:
     else:
         # broadcast_comm_his_GS参数已被建立
@@ -244,61 +242,69 @@ def init():
         print("没有其他客户更新broadcast_comm_his_GS 参数，换我来")
         # 获取 'broadcast_comm_his_GS' 的值
         broadcast_comm_his_GS = rospy.get_param(str_broad)
-
         # 将当前客户端的通信次数标记为 1,所以最初将state_count = [0, 0, -1]的通信设置为-1，就是为了在此加入一个初始化
         broadcast_comm_his_GS[(NUM_ROBOTS + 1)*_id] = 1 # 同上
         print("broadcast_comm_his_GS存在，通信标记为1")
-        # 遍历 broadcast_comm_his_GS 列表,检查是否所有机器人的通信次数都大于 0,表示所有机器人都已初始化完成
-        for r in range(NUM_ROBOTS):
-            if broadcast_comm_his_GS[(NUM_ROBOTS + 1)*r] <= 0: break
+        rospy.set_param(str_broad_lock, False)
+    # 遍历 broadcast_comm_his_GS 列表,检查是否所有机器人的通信次数都大于 0,表示所有机器人都已初始化完成
+    for r in range(NUM_ROBOTS):
+        if broadcast_comm_his_GS[(NUM_ROBOTS + 1)*r] <= 0:
+            time.sleep(100)
         else:
             # all robots have initialized,
             start_time = time.time() + 5
             rospy.set_param(str_start_time, start_time)
-            Create_start_time = True
+            # Create_start_time = True
             print("initial is done")
 
-        rospy.set_param(str_broad, broadcast_comm_his_GS)
-        rospy.delete_param(str_broad_lock)
+    rospy.set_param(str_broad, broadcast_comm_his_GS)
+    # rospy.delete_param(str_broad_lock)
 
-    if not Create_start_time:
-        while rospy.has_param(str_start_time):
-            # Not all robots have initialized
-            rospy.sleep(0.1)
-        # start_time = rospy.get_param(str_start_time)
+    # if not Create_start_time:
+    #     while rospy.has_param(str_start_time):
+    #         # Not all robots have initialized
+    #         rospy.sleep(0.1)
+    #     # start_time = rospy.get_param(str_start_time)
 # ---------------------------------
 
+str_start_time = '/start_time'
 # TODO liuyh 更新代码 控制机器人运动
 def motion():
     global v_all, v_count, next_motion_time, start_time,str_start_time
-    delay = 0.1
+    delay = 1
+    start_time = rospy.get_param(str_start_time)
     while start_time is None:
         # 所有机器人还没初始化完成
         rospy.sleep(0.1)
-    start_time = rospy.get_param(str_start_time)
 
     next_motion_time = start_time
     final_time = start_time + total_time
     velocity = [np.random.randn()*sigma_v_input_ + E_v_, np.random.randn()*sigma_omega_input_ + E_omega_]
+    velocity = np.squeeze(velocity)
+    # print(velocity)
     # np.random.randn()是NumPy库中用于生成服从标准正态分布（均值为0，标准差为1）的随机数的函数
 
     while next_motion_time < final_time:
-        if time.time() + delay >= next_motion_time:
+        if time.time() + delay >= next_motion_time or v_count<9:
             with v_all_lock:
                 # v_count初始为-1,v_all里提前存储每次运动的速度
+                # v_all[v_count,:] = velocity
                 v_count += 1
-                v_all[v_count] = velocity
-                # 控制机器人运动
+                v_all[v_count, 0] = velocity[0]
+                v_all[v_count, 1] = velocity[1]
+                #控制机器人运动
                 vel_pub = rospy.Publisher("/cmd_vel", Twist, queue_size=10)
                 vel_msg = Twist()
                 rate = rospy.Rate(30)
                 while not rospy.is_shutdown():
+                    # start_time = time.time()
                         start = rospy.get_time()
-                        if (rospy.get_time()-start) <= 1:
-                            vel_msg.angular.z = v_all[v_count][1]  # Forward velocity
-                        if (rospy.get_time()-start) <= 2:
-                            vel_msg.linear.x = v_all[v_count][0]
-                        vel_pub.publish(vel_msg)
+                        while rospy.get_time()-start <= 1:
+                            vel_msg.angular.z = v_all[v_count, 1]  # Forward velocity
+                            vel_pub.publish(vel_msg)
+                        while rospy.get_time()-start <= 2:
+                            vel_msg.linear.x = v_all[v_count, 0]
+                            vel_pub.publish(vel_msg)
                         rate.sleep()
                         # 停止运动后机器人不动
                         vel_msg.linear.x = 0  # No linear velocity
@@ -307,6 +313,8 @@ def motion():
                         rate.sleep()
 
             velocity = [np.random.randn()*sigma_v_input_ + E_v_, np.random.randn()*sigma_omega_input_ + E_omega_]
+            velocity = np.squeeze(velocity)
+            # print(velocity)
             next_motion_time += DELTA_T
 # -------------------
 
