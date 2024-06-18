@@ -281,7 +281,7 @@ def motion():
     final_time = start_time + total_time
     velocity = [np.random.randn()*sigma_v_input_ + E_v_, np.random.randn()*sigma_omega_input_ + E_omega_]
     velocity = np.squeeze(velocity)
-    print(velocity)
+    # print(velocity)
     # np.random.randn()是NumPy库中用于生成服从标准正态分布（均值为0，标准差为1）的随机数的函数
 
     while next_motion_time < final_time:
@@ -313,7 +313,7 @@ def motion():
 
             velocity = [np.random.randn()*sigma_v_input_ + E_v_, np.random.randn()*sigma_omega_input_ + E_omega_]
             velocity = np.squeeze(velocity)
-            print(velocity)
+            # print(velocity)
             next_motion_time += DELTA_T
 # -------------------
 
