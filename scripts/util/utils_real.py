@@ -74,7 +74,7 @@ str_broad_lock = '/broadcast_lock'
 # 初始化 start_time 为 None,用于存储所有机器人启动的时间
 start_time = None
 
-# 初始化ros节点，发布话题，话题中包含两个字典state_alg = {}、cov_alg = {}
+
 # rospy.init_node('client'+str(_id), anonymous=False)
 class TopicSubscriber:
     def __init__(self, topic_name):
@@ -232,7 +232,6 @@ def init():
         rospy.set_param(str_broad, broadcast_comm_his_GS)
         # 将Create_broad标记为True，表示已创建通信历史参数
         # Create_broad = True
-
     # if not Create_broad:
     else:
         # broadcast_comm_his_GS参数已被建立
@@ -244,13 +243,15 @@ def init():
         print("没有其他客户更新broadcast_comm_his_GS 参数，换我来")
         # 获取 'broadcast_comm_his_GS' 的值
         broadcast_comm_his_GS = rospy.get_param(str_broad)
-
         # 将当前客户端的通信次数标记为 1,所以最初将state_count = [0, 0, -1]的通信设置为-1，就是为了在此加入一个初始化
         broadcast_comm_his_GS[(NUM_ROBOTS + 1)*_id] = 1 # 同上
         print("broadcast_comm_his_GS存在，通信标记为1")
-        # 遍历 broadcast_comm_his_GS 列表,检查是否所有机器人的通信次数都大于 0,表示所有机器人都已初始化完成
-        for r in range(NUM_ROBOTS):
-            if broadcast_comm_his_GS[(NUM_ROBOTS + 1)*r] <= 0: break
+        rospy.set_param(str_broad_lock, False)
+    # 遍历 broadcast_comm_his_GS 列表,检查是否所有机器人的通信次数都大于 0,表示所有机器人都已初始化完成
+    for r in range(NUM_ROBOTS):
+        if broadcast_comm_his_GS[(NUM_ROBOTS + 1)*r] <= 0:
+            #break
+            time.sleep(1)
         else:
             # all robots have initialized,
             start_time = time.time() + 5
@@ -258,14 +259,14 @@ def init():
             Create_start_time = True
             print("initial is done")
 
-        rospy.set_param(str_broad, broadcast_comm_his_GS)
-        rospy.delete_param(str_broad_lock)
+    rospy.set_param(str_broad, broadcast_comm_his_GS)
+    rospy.delete_param(str_broad_lock)
 
-    if not Create_start_time:
-        while rospy.has_param(str_start_time):
-            # Not all robots have initialized
-            rospy.sleep(0.1)
-        # start_time = rospy.get_param(str_start_time)
+    # if not Create_start_time:
+    #     while rospy.has_param(str_start_time):
+    #         # Not all robots have initialized
+    #         rospy.sleep(0.1)
+    #     # start_time = rospy.get_param(str_start_time)
 # ---------------------------------
 
 # TODO liuyh 更新代码 控制机器人运动
