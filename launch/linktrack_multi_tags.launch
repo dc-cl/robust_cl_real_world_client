@@ -36,6 +36,10 @@
         <param name="port_name" value="/dev/ttyCH343USB2" />
         <param name="baud_rate" value="$(arg baud_rate_value)" />
     </node>
+    <node pkg="wpb_move" type="wpb_core" name="wpb_core" output="$(arg output)">
+        <param name="serial_port" type="string" value="/dev/ftdi"/> 
+        <rosparam file="$(find wpb_move)/config/wpb_ai.yaml" command="load" />
+    </node>
     <node pkg="robust_cl_real_world_client" type="utils_real.py" name="robot_$(arg id)" output="$(arg output)">
         <remap from="LinktrackNodeframe2_0" to="$(arg new_topic_name1)"/>
         <param name="id" value="$(arg id)" type="int"/>
