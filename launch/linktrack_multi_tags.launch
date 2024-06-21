@@ -36,7 +36,7 @@
         <param name="port_name" value="/dev/ttyCH343USB2" />
         <param name="baud_rate" value="$(arg baud_rate_value)" />
     </node>
-    <node pkg="wpb_move" type="wpb_core" name="wpb_core" output="$(arg output)">
+    <node pkg="wpb_move" type="wpb_core" name="wpb_core_$(arg id)" output="$(arg output)">
         <param name="serial_port" type="string" value="/dev/ftdi"/> 
         <rosparam file="$(find wpb_move)/config/wpb_ai.yaml" command="load" />
     </node>
