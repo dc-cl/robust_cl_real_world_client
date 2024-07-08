@@ -31,7 +31,21 @@ sudo bash ~/cl_ws/src/robust_cl_real_world_client/deployment/uwb/install_serial_
 
 # Make ROS wrapper about UWB
 cd ~/cl_ws/src
-bash ./robust_cl_real_world_client/deployment/uwb/make_nlink_parser_ros.sh
+bash ./robust_cl_real_world_client/deployment/uwb/download_nlink_parser_ros.sh
+```
+
+3. Deploy the environment for movement(6-robot, other type needs DIY)
+```bash
+# Make ROS wrapper about movement
+cd ~/cl_ws/src
+bash ./robust_cl_real_world_client/deployment/uwb/download_6_robot_ros.sh
+```
+
+4. make
+```bash
+# If using virtual environment, need to set up. we used miniconda 
+cd ~/cl_ws
+catkin_make -DPYTHON_EXECUTABLE=~/miniconda3/envs/CL/bin/python3
 ```
 
 # Usage
