@@ -13,8 +13,8 @@ if [ ! -e "/dev/ttyUSB*" ] && [ ! -e "/dev/ttyCH343USB*" ]; then
 
     if [ -z "$dir_found" ]; then
         echo "Directory ch343ser_linux not found in /home. Cloning repository..."
-	git clone https://github.com/WCHSoftGroup/ch343ser_linux
-	dir_found="./ch343ser_linux"
+        git clone https://github.com/WCHSoftGroup/ch343ser_linux
+        dir_found="./ch343ser_linux"
     else
         echo "Directory found: $dir_found"
     fi
