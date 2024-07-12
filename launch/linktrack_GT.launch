@@ -33,7 +33,7 @@
     <node pkg="nlink_parser" type="linktrack" name="linktrack_$(arg topic_base2)" output="$(arg output)">
         <remap from="$(arg origin_topic_name)" to="$(arg new_topic_name2)"/>
         <remap from="$(arg origin_topic_send_name)" to="$(arg new_topic_send_name2)"/>
-        <param name="port_name" value="/dev/ttyUSB0" />
+        <param name="port_name" value="/dev/ttyCH343USB2" />
         <param name="baud_rate" value="$(arg baud_rate_value)" />
     </node>
     <node pkg="wpb_move" type="wpb_core" name="wpb_core_$(arg id)" output="$(arg output)">
