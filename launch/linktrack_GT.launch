@@ -1,0 +1,43 @@
+<launch>
+    <arg name="id" default="0" />
+    <arg name="topic_base0" value="$(eval arg('id') * 3)" /> <!-- Each robot has 3 ltp-b modules -->
+    <arg name="topic_base1" value="$(eval arg('topic_base0') + 1)" />
+    <arg name="topic_base2" value="$(eval arg('topic_base0') + 2)" />
+
+    <arg name="output" default="screen" />
+    <arg name="baud_rate_value" default="921600" />
+
+    <arg name="origin_topic_name" default="nlink_linktrack_nodeframe2" />
+    <arg name="origin_topic_send_name" default="nlink_linktrack_data_transmission" />
+
+    <arg name="new_topic_name0" default="$(arg origin_topic_name)_$(arg topic_base0)" />
+    <arg name="new_topic_name1" default="$(arg origin_topic_name)_$(arg topic_base1)" />
+    <arg name="new_topic_name2" default="$(arg origin_topic_name)_$(arg topic_base2)" />
+
+    <arg name="new_topic_send_name0" default="$(arg origin_topic_send_name)_$(arg topic_base0)" />
+    <arg name="new_topic_send_name1" default="$(arg origin_topic_send_name)_$(arg topic_base1)" />
+    <arg name="new_topic_send_name2" default="$(arg origin_topic_send_name)_$(arg topic_base2)" />
+    
+    <node pkg="nlink_parser" type="linktrack" name="linktrack_$(arg topic_base0)" output="$(arg output)">
+        <remap from="$(arg origin_topic_name)" to="$(arg new_topic_name0)"/>
+        <remap from="$(arg origin_topic_send_name)" to="$(arg new_topic_send_name0)"/>
+        <param name="port_name" value="/dev/ttyCH343USB0" />
+        <param name="baud_rate" value="$(arg baud_rate_value)" />
+    </node>
+    <node pkg="nlink_parser" type="linktrack" name="linktrack_$(arg topic_base1)" output="$(arg output)">
+        <remap from="$(arg origin_topic_name)" to="$(arg new_topic_name1)"/>
+        <remap from="$(arg origin_topic_send_name)" to="$(arg new_topic_send_name1)"/>
+        <param name="port_name" value="/dev/ttyCH343USB1" />
+        <param name="baud_rate" value="$(arg baud_rate_value)" />
+    </node>
+    <node pkg="nlink_parser" type="linktrack" name="linktrack_$(arg topic_base2)" output="$(arg output)">
+        <remap from="$(arg origin_topic_name)" to="$(arg new_topic_name2)"/>
+        <remap from="$(arg origin_topic_send_name)" to="$(arg new_topic_send_name2)"/>
+        <param name="port_name" value="/dev/ttyCH343USB2" />
+        <param name="baud_rate" value="$(arg baud_rate_value)" />
+    </node>
+    <node pkg="wpb_move" type="wpb_core" name="wpb_core_$(arg id)" output="$(arg output)">
+        <param name="serial_port" type="string" value="/dev/ftdi"/> 
+        <rosparam file="$(find wpb_move)/config/wpb_ai.yaml" command="load" />
+    </node>
+</launch>
