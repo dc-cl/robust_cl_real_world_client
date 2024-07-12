@@ -6,4 +6,4 @@
 id=${1:0}
 
 source devel/setup.bash
-roslaunch robust_cl_real_world_client linktrack_multi_tags.launch id:=${id}
+roslaunch robust_cl_real_world_client linktrack_GT.launch id:=${id}
