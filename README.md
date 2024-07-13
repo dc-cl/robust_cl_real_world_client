@@ -52,5 +52,5 @@ catkin_make -DPYTHON_EXECUTABLE=~/miniconda3/envs/CL/bin/python3
 ```bash
 # Execute file: "run.sh" with id: 0, for example.
 cd ~/cl_ws
-bash ./src/robust_cl_real_world_client/deployment/uwb/run.sh 0
+bash ./src/robust_cl_real_world_client/test/run.sh 0
 ```

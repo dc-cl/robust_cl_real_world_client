@@ -11,11 +11,11 @@
     <arg name="origin_topic_send_name" default="nlink_linktrack_data_transmission" />
 
     <arg name="new_topic_name0" default="$(arg origin_topic_name)_$(arg topic_base0)" />
-    <arg name="new_topic_name1" default="$(arg origin_topic_name)_$(arg topic_base1)" />
+    <!-- <arg name="new_topic_name1" default="$(arg origin_topic_name)_$(arg topic_base1)" /> -->
     <arg name="new_topic_name2" default="$(arg origin_topic_name)_$(arg topic_base2)" />
 
     <arg name="new_topic_send_name0" default="$(arg origin_topic_send_name)_$(arg topic_base0)" />
-    <arg name="new_topic_send_name1" default="$(arg origin_topic_send_name)_$(arg topic_base1)" />
+    <!-- <arg name="new_topic_send_name1" default="$(arg origin_topic_send_name)_$(arg topic_base1)" /> -->
     <arg name="new_topic_send_name2" default="$(arg origin_topic_send_name)_$(arg topic_base2)" />
     
     <node pkg="nlink_parser" type="linktrack" name="linktrack_$(arg topic_base0)" output="$(arg output)">
@@ -24,12 +24,12 @@
         <param name="port_name" value="/dev/ttyCH343USB0" />
         <param name="baud_rate" value="$(arg baud_rate_value)" />
     </node>
-    <node pkg="nlink_parser" type="linktrack" name="linktrack_$(arg topic_base1)" output="$(arg output)">
+    <!-- <node pkg="nlink_parser" type="linktrack" name="linktrack_$(arg topic_base1)" output="$(arg output)">
         <remap from="$(arg origin_topic_name)" to="$(arg new_topic_name1)"/>
         <remap from="$(arg origin_topic_send_name)" to="$(arg new_topic_send_name1)"/>
         <param name="port_name" value="/dev/ttyCH343USB1" />
         <param name="baud_rate" value="$(arg baud_rate_value)" />
-    </node>
+    </node> -->
     <node pkg="nlink_parser" type="linktrack" name="linktrack_$(arg topic_base2)" output="$(arg output)">
         <remap from="$(arg origin_topic_name)" to="$(arg new_topic_name2)"/>
         <remap from="$(arg origin_topic_send_name)" to="$(arg new_topic_send_name2)"/>
@@ -38,6 +38,19 @@
     </node>
     <node pkg="wpb_move" type="wpb_core" name="wpb_core_$(arg id)" output="$(arg output)">
         <param name="serial_port" type="string" value="/dev/ftdi"/> 
+        <param name="odom" type="bool" value="false"/>
         <rosparam file="$(find wpb_move)/config/wpb_ai.yaml" command="load" />
     </node>
+        <!-- js node -->
+    <node respawn="true" pkg="joy" type="joy_node" name="wpb_joy" >
+        <param name="dev" type="string" value="/dev/input/js0" />
+        <param name="deadzone" value="0.12" />
+    </node>
+
+    <!-- Axes Velcmd -->
+    <param name="axis_linear" value="1" type="int"/>
+    <param name="axis_angular" value="0" type="int"/>
+    <param name="scale_linear" value="1" type="double"/>
+    <param name="scale_angular" value="1" type="double"/>
+    <node pkg="wpb_move" type="wpb_js_vel" name="teleop"/>
 </launch>
